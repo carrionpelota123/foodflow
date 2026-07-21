@@ -1,0 +1,7 @@
+node_modules/
+.env
+restaurant.db
+*.db-journal
+*.db-wal
+*.db-shm
+fix-caja.js
