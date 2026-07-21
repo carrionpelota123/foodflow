@@ -35,6 +35,62 @@ class App {
     setTimeout(() => { t.style.animation = 'toastIn 0.3s ease reverse forwards'; setTimeout(() => t.remove(), 300); }, 3000);
   }
 
+  showConfirm(title, message, icon = '🗑️', confirmText = 'Eliminar', danger = true) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.innerHTML = `
+        <div class="confirm-dialog">
+          <div class="confirm-dialog-icon ${danger ? '' : 'warning'}">${icon}</div>
+          <h3 class="confirm-dialog-title">${title}</h3>
+          <p class="confirm-dialog-message">${message}</p>
+          <div class="confirm-dialog-actions">
+            <button class="btn btn-outline" id="confirm-cancel">Cancelar</button>
+            <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirm-ok">${confirmText}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      
+      overlay.querySelector('#confirm-cancel').onclick = () => { overlay.remove(); resolve(false); };
+      overlay.querySelector('#confirm-ok').onclick = () => { overlay.remove(); resolve(true); };
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+    });
+  }
+
+  animateCounter(el, target, duration = 800) {
+    const start = 0;
+    const startTime = performance.now();
+    const isMoney = el.textContent.includes('S/');
+    const prefix = isMoney ? 'S/ ' : '';
+    
+    const step = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(start + (target - start) * eased);
+      el.textContent = prefix + current.toFixed(isMoney ? 2 : 0);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  spawnConfetti() {
+    const colors = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6'];
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      p.style.animationDelay = Math.random() * 0.8 + 's';
+      p.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+      p.style.width = (6 + Math.random() * 6) + 'px';
+      p.style.height = (6 + Math.random() * 6) + 'px';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 4000);
+    }
+  }
+
   toggleSidebar() {
     const sb = document.getElementById('sidebar');
     const ov = document.querySelector('.sidebar-overlay');
@@ -381,8 +437,10 @@ class App {
     document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector(`[data-bpage="${page}"]`)?.classList.add('active');
     const main = document.getElementById('main-content');
+    const transitions = ['pageIn', 'slideInLeft', 'slideInRight', 'scaleIn'];
+    const randomTrans = transitions[Math.floor(Math.random() * transitions.length)];
     if (main) main.style.animation = 'none';
-    if (main) { main.offsetHeight; main.style.animation = ''; }
+    if (main) { main.offsetHeight; main.style.animation = `${randomTrans} 0.4s cubic-bezier(0.16,1,0.3,1)`; }
     switch (page) {
       case 'dashboard': this.renderDashboard(); break;
       case 'mesas': this.renderMesas(); break;
@@ -411,7 +469,7 @@ class App {
           <div class="subtitle">Resumen de ${this.user.empresa_nombre || 'tu restaurante'}</div>
         </div>
 
-        <div class="stats-grid">
+        <div class="stats-grid" data-stagger>
           <div class="stat-card fade-up fade-up-1">
             <div class="stat-bg-icon">🪑</div>
             <div class="stat-top">
@@ -530,7 +588,7 @@ class App {
           </div>` : ''}
         </div>
 
-        <div class="mesas-grid">
+        <div class="mesas-grid" data-stagger>
           ${mesas.map((m, i) => `
             <div class="mesa-card ${m.estado} fade-up" onclick="app.clickMesa('${m.id}')" style="animation-delay:${i * 0.04}s">
               <div class="mesa-num">Mesa ${m.numero}</div>
@@ -617,7 +675,7 @@ class App {
   }
 
   async deleteMesa(id) {
-    if (!confirm('Eliminar esta mesa?')) return;
+    if (!await this.showConfirm('¿Eliminar mesa?', 'Esta acción no se puede deshacer.', '🗑️', 'Eliminar', true)) return;
     try {
       await api.deleteMesa(id);
       document.querySelector('.modal-overlay')?.remove();
@@ -657,7 +715,7 @@ class App {
               <button class="cat-btn ${!this.posFilterCat ? 'active' : ''}" onclick="app.filterPosCat(null, this)">Todos</button>
               ${categorias.map(c => `<button class="cat-btn ${this.posFilterCat === c.id ? 'active' : ''}" onclick="app.filterPosCat('${c.id}', this)">${c.nombre}</button>`).join('')}
             </div>
-            <div class="pos-products" id="pos-products">${this.renderPosProducts(productos)}</div>
+            <div class="pos-products" id="pos-products" data-stagger>${this.renderPosProducts(productos)}</div>
           </div>
           <div class="pos-order collapsed-mobile" id="pos-order">
             <div class="pos-order-toggle-mobile" onclick="app.togglePosOrder()">
@@ -904,7 +962,7 @@ class App {
 
   async cancelarPedidoActual() {
     if (!this.currentPedidoId) return;
-    if (!confirm('Cancelar este pedido?')) return;
+    if (!await this.showConfirm('¿Cancelar pedido?', 'El pedido se marcará como cancelado.', '⚠️', 'Cancelar', true)) return;
     try {
       await api.cancelarPedido(this.currentPedidoId);
       this.toast('Pedido cancelado');
@@ -1104,6 +1162,7 @@ class App {
       </div>`;
 
     document.body.appendChild(overlay);
+    this.spawnConfetti();
 
     this._lastReceipt = {
       empresa, fechaStr, horaStr, mesaNum,
@@ -1250,7 +1309,7 @@ class App {
             <p>Cuando los meseros creen pedidos, apareceran aqui en tiempo real.</p>
           </div>
         ` : `
-          <div class="pedidos-grid">
+          <div class="pedidos-grid" data-stagger>
             ${pedidos.map((p, i) => `
               <div class="pedido-card fade-up" style="animation-delay:${i * 0.06}s">
                 <div class="pedido-card-top">
@@ -1565,7 +1624,7 @@ class App {
   }
 
   async deleteProducto(id) {
-    if (!confirm('Eliminar este producto?')) return;
+    if (!await this.showConfirm('¿Eliminar producto?', 'Esta acción no se puede deshacer.', '🗑️', 'Eliminar', true)) return;
     try { await api.deleteProducto(id); document.querySelector('.modal-overlay')?.remove(); this.toast('Producto eliminado'); this.renderMenu(); }
     catch (err) { this.toast(err.message, 'error'); }
   }
@@ -1604,7 +1663,7 @@ class App {
   }
 
   async deleteCategoria(id) {
-    if (!confirm('Eliminar esta categoria?')) return;
+    if (!await this.showConfirm('¿Eliminar categoría?', 'Esta acción no se puede deshacer.', '🗑️', 'Eliminar', true)) return;
     try { await api.deleteCategoria(id); this.toast('Categoria eliminada'); this.renderMenu(); }
     catch (err) { this.toast(err.message, 'error'); }
   }
@@ -1791,7 +1850,7 @@ class App {
   }
 
   async cerrarCaja() {
-    if (!confirm('Cerrar la caja del dia?')) return;
+    if (!await this.showConfirm('¿Cerrar la caja?', 'Se generará el cuadre del día.', '🔒', 'Cerrar Caja', true)) return;
     try { await api.cerrarCaja(); this.toast('Caja cerrada'); this.renderCaja(); }
     catch (err) { this.toast(err.message, 'error'); }
   }
@@ -1900,7 +1959,7 @@ class App {
   }
 
   async deleteUsuario(id, nombre) {
-    if (!confirm(`Eliminar a ${nombre}? Esta accion no se puede deshacer.`)) return;
+    if (!await this.showConfirm(`¿Eliminar a ${nombre}?`, 'Esta acción no se puede deshacer.', '🗑️', 'Eliminar', true)) return;
     try { await api.deleteUsuario(id); this.toast('Usuario eliminado'); this.renderUsuarios(); }
     catch (err) { this.toast(err.message, 'error'); }
   }
