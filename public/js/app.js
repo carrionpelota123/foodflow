@@ -48,6 +48,17 @@ class App {
     if (ov) ov.classList.remove('visible');
   }
 
+  toggleMobileUserMenu(e) {
+    e?.stopPropagation();
+    const menu = document.getElementById('mobile-user-menu');
+    if (menu) menu.classList.toggle('visible');
+  }
+
+  closeMobileUserMenu() {
+    const menu = document.getElementById('mobile-user-menu');
+    if (menu) menu.classList.remove('visible');
+  }
+
   formatDate(iso) {
     if (!iso) return '-';
     const d = new Date(iso);
@@ -296,6 +307,27 @@ class App {
             <button class="sidebar-logout" onclick="app.logout()">Cerrar Sesion</button>
           </div>
         </aside>
+        <header class="mobile-header">
+          <div class="mobile-header-left">
+            <div class="mobile-header-brand">🍽</div>
+            <div>
+              <div class="mobile-header-title">ECSYSTEM</div>
+              <div class="mobile-header-sub">${this.user.empresa_nombre || ''}</div>
+            </div>
+          </div>
+          <div class="mobile-header-right">
+            <button class="mobile-header-menu" onclick="app.toggleMobileUserMenu(event)">⋮</button>
+            <div class="mobile-header-avatar" onclick="app.toggleMobileUserMenu(event)">${initials}</div>
+          </div>
+        </header>
+        <div class="mobile-user-menu" id="mobile-user-menu">
+          <div style="padding:8px 12px;border-bottom:1px solid var(--border-light);margin-bottom:4px">
+            <div style="font-weight:600;font-size:14px;color:var(--text)">${this.user.nombre}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${funcionLabel[this.getFuncion()] || this.getFuncion()}</div>
+          </div>
+          <div class="mobile-user-menu-item" onclick="app.navigate('configuracion'); app.closeMobileUserMenu()">⚙ Configuracion</div>
+          <div class="mobile-user-menu-item danger" onclick="app.logout()">🚪 Cerrar Sesion</div>
+        </div>
         <main class="main-content" id="main-content"></main>
         <nav class="bottom-nav" id="bottom-nav">
           ${navItems.slice(0, 5).map(n => `
@@ -1512,3 +1544,12 @@ class App {
 }
 
 const app = new App();
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('mobile-user-menu');
+  if (menu && menu.classList.contains('visible')) {
+    if (!menu.contains(e.target) && !e.target.closest('.mobile-header-right')) {
+      menu.classList.remove('visible');
+    }
+  }
+});
