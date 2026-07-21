@@ -35,24 +35,20 @@ router.post('/register', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'admin')
     `);
 
-    const transaction = db.transaction(async () => {
-      await insertEmpresa.run(empresaId, nombre_empresa, email_empresa, telefono || null, now, fin);
-      await insertUsuario.run(usuarioId, empresaId, nombre_admin, email, hashedPassword);
+    await insertEmpresa.run(empresaId, nombre_empresa, email_empresa, telefono || null, now, fin);
+    await insertUsuario.run(usuarioId, empresaId, nombre_admin, email, hashedPassword);
 
-      const defaultCats = ['Entradas', 'Platos Fuertes', 'Bebres', 'Postres'];
-      const insertCat = db.prepare('INSERT INTO categorias (id, empresa_id, nombre, orden) VALUES (?, ?, ?, ?)');
-      for (let i = 0; i < defaultCats.length; i++) {
-        await insertCat.run(uuidv4(), empresaId, defaultCats[i], i + 1);
-      }
+    const defaultCats = ['Entradas', 'Platos Fuertes', 'Bebres', 'Postres'];
+    const insertCat = db.prepare('INSERT INTO categorias (id, empresa_id, nombre, orden) VALUES (?, ?, ?, ?)');
+    for (let i = 0; i < defaultCats.length; i++) {
+      await insertCat.run(uuidv4(), empresaId, defaultCats[i], i + 1);
+    }
 
-      for (let i = 1; i <= 10; i++) {
-        await db.prepare('INSERT INTO mesas (id, empresa_id, numero, capacidad) VALUES (?, ?, ?, ?)').run(
-          uuidv4(), empresaId, i, i <= 4 ? 2 : 4
-        );
-      }
-    });
-
-    await transaction();
+    for (let i = 1; i <= 10; i++) {
+      await db.prepare('INSERT INTO mesas (id, empresa_id, numero, capacidad) VALUES (?, ?, ?, ?)').run(
+        uuidv4(), empresaId, i, i <= 4 ? 2 : 4
+      );
+    }
 
     const token = jwt.sign(
       { id: usuarioId, empresa_id: empresaId, email, rol: 'admin', funcion: 'administrador', nombre: nombre_admin },
