@@ -1213,7 +1213,224 @@ td strong { font-weight: 600; }
   .login-tabs .tab-btn { padding: 10px 8px; font-size: 12px; }
 }
 
-/* ========== RECEIPT MODAL ========== */
+/* ========== BOTTOM NAV (MOBILE) ========== */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border-light);
+  z-index: 100;
+  justify-content: space-around;
+  padding: 4px 0 env(safe-area-inset-bottom, 4px);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 48px;
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+}
+
+.bottom-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
+  .main-content { padding-bottom: 80px !important; }
+}
+
+/* ========== USUARIOS GRID ========== */
+.usuarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.usuario-card {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 0.2s;
+}
+
+.usuario-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.usuario-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px;
+  flex-shrink: 0;
+}
+
+.usuario-info {
+  flex: 1; min-width: 0;
+}
+
+.usuario-name {
+  font-weight: 600; color: var(--text); font-size: 15px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.usuario-email {
+  color: var(--text-secondary); font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.usuario-badges {
+  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+}
+
+.usuario-actions {
+  display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+
+.btn-danger-outline {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  background: transparent;
+}
+
+.btn-danger-outline:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: var(--text);
+}
+
+.btn-warning:hover {
+  background: var(--warning-hover);
+}
+
+/* ========== CONFIG GRID ========== */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .config-grid { grid-template-columns: 1fr; }
+}
+
+/* ========== FILTROS BAR ========== */
+.filtros-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  background: var(--card);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.filtros-bar .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.filtros-bar select,
+.filtros-bar input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ========== DATA TABLE ========== */
+.table-container {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th {
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover td {
+  background: var(--bg);
+}
+
+.data-table .mono {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-weight: 600;
+}
+
+.empty-row {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 16px !important;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .usuarios-grid { grid-template-columns: 1fr; }
+  .filtros-bar { flex-direction: column; }
+  .filtros-bar .form-group { min-width: 100%; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 10px 10px; }
+}
 .receipt-success-ring {
   width: 56px; height: 56px;
   border-radius: 50%;

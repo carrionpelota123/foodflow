@@ -42,6 +42,11 @@ class ApiClient {
   getEmpresa() { return this.request('/auth/empresa'); }
   updateEmpresa(data) { return this.request('/auth/empresa', { method: 'PUT', body: JSON.stringify(data) }); }
   registerUser(data) { return this.request('/auth/register-user', { method: 'POST', body: JSON.stringify(data) }); }
+  getUsuarios() { return this.request('/auth/usuarios'); }
+  updateUsuario(id, data) { return this.request(`/auth/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+  deleteUsuario(id) { return this.request(`/auth/usuarios/${id}`, { method: 'DELETE' }); }
+  changePassword(data) { return this.request('/auth/change-password', { method: 'POST', body: JSON.stringify(data) }); }
+  getHistorialPedidos(params = '') { return this.request(`/auth/pedidos-historial${params ? '?' + params : ''}`); }
 
   getMesas() { return this.request('/mesas'); }
   getMesa(id) { return this.request(`/mesas/${id}`); }

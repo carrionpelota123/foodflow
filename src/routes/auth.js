@@ -185,4 +185,70 @@ router.post('/register-user', authenticateToken, (req, res) => {
   }
 });
 
+router.get('/usuarios', authenticateToken, (req, res) => {
+  try {
+    if (req.user.rol === 'superadmin' && req.query.empresa_id) {
+      const users = db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.query.empresa_id);
+      return res.json(users);
+    }
+    const users = db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.user.empresa_id);
+    res.json(users);
+  } catch (err) { res.status(500).json({ error: 'Error al obtener usuarios' }); }
+});
+
+router.put('/usuarios/:id', authenticateToken, (req, res) => {
+  try {
+    if (req.user.rol !== 'admin' && req.user.rol !== 'superadmin') return res.status(403).json({ error: 'Sin permisos' });
+    const { nombre, email, funcion, password, activo } = req.body;
+    const user = db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (password) {
+      const hashed = bcrypt.hashSync(password, 10);
+      db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, password = ?, activo = ? WHERE id = ?')
+        .run(nombre || user.nombre, email || user.email, funcion || user.funcion, hashed, activo !== undefined ? (activo ? 1 : 0) : user.activo, req.params.id);
+    } else {
+      db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, activo = ? WHERE id = ?')
+        .run(nombre || user.nombre, email || user.email, funcion || user.funcion, activo !== undefined ? (activo ? 1 : 0) : user.activo, req.params.id);
+    }
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Error al actualizar usuario' }); }
+});
+
+router.delete('/usuarios/:id', authenticateToken, (req, res) => {
+  try {
+    if (req.user.rol !== 'admin' && req.user.rol !== 'superadmin') return res.status(403).json({ error: 'Sin permisos' });
+    if (req.params.id === req.user.id) return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
+    const user = db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    db.prepare('DELETE FROM usuarios WHERE id = ?').run(req.params.id);
+    res.json({ message: 'Usuario eliminado' });
+  } catch (err) { res.status(500).json({ error: 'Error al eliminar usuario' }); }
+});
+
+router.post('/change-password', authenticateToken, (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.user.id);
+    if (!bcrypt.compareSync(current_password, user.password)) return res.status(401).json({ error: 'Contrasena actual incorrecta' });
+    db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(bcrypt.hashSync(new_password, 10), req.user.id);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Error al cambiar contrasena' }); }
+});
+
+router.get('/pedidos-historial', authenticateToken, (req, res) => {
+  try {
+    const empresaId = req.user.empresa_id;
+    const { estado, fecha_inicio, fecha_fin, busqueda } = req.query;
+    let query = `SELECT p.*, m.numero as mesa_numero, u.nombre as usuario_nombre FROM pedidos p LEFT JOIN mesas m ON p.mesa_id = m.id LEFT JOIN usuarios u ON p.usuario_id = u.id WHERE p.empresa_id = ?`;
+    const params = [empresaId];
+    if (estado) { query += ' AND p.estado = ?'; params.push(estado); }
+    if (fecha_inicio) { query += ' AND DATE(p.created_at) >= ?'; params.push(fecha_inicio); }
+    if (fecha_fin) { query += ' AND DATE(p.created_at) <= ?'; params.push(fecha_fin); }
+    query += ' ORDER BY p.created_at DESC LIMIT 200';
+    const pedidos = db.prepare(query).all(...params);
+    res.json(pedidos);
+  } catch (err) { res.status(500).json({ error: 'Error al obtener historial' }); }
+});
+
 module.exports = router;

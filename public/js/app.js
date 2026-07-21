@@ -89,25 +89,27 @@ class App {
     if (f === 'moso') {
       return [
         { id: 'mesas', icon: '🪑', label: 'Mesas', section: 'Operacion' },
-        { id: 'pos', icon: '💳', label: 'Punto de Venta', section: 'Operacion' },
+        { id: 'pos', icon: '💳', label: 'POS', section: 'Operacion' },
       ];
     }
     if (f === 'cajero') {
       return [
         { id: 'pedidos', icon: '📋', label: 'Pedidos', section: 'Operacion' },
-        { id: 'pos', icon: '💳', label: 'Punto de Venta', section: 'Operacion' },
-        { id: 'caja', icon: '💰', label: 'Caja', section: 'Administracion' },
+        { id: 'pos', icon: '💳', label: 'POS', section: 'Operacion' },
+        { id: 'caja', icon: '💰', label: 'Caja', section: 'Admin' },
+        { id: 'historial', icon: '📜', label: 'Historial', section: 'Admin' },
       ];
     }
     const items = [
       { id: 'dashboard', icon: '📊', label: 'Dashboard', section: 'Principal' },
       { id: 'mesas', icon: '🪑', label: 'Mesas', section: 'Principal' },
-      { id: 'pos', icon: '💳', label: 'Punto de Venta', section: 'Principal' },
-      { id: 'menu', icon: '📋', label: 'Menu', section: 'Administracion' },
-      { id: 'reportes', icon: '📈', label: 'Reportes', section: 'Administracion' },
-      { id: 'caja', icon: '💰', label: 'Caja', section: 'Administracion' },
-      { id: 'usuarios', icon: '👥', label: 'Usuarios', section: 'Administracion' },
-      { id: 'configuracion', icon: '⚙', label: 'Configuracion', section: 'Administracion' },
+      { id: 'pos', icon: '💳', label: 'POS', section: 'Principal' },
+      { id: 'historial', icon: '📜', label: 'Historial', section: 'Principal' },
+      { id: 'menu', icon: '📋', label: 'Menu', section: 'Admin' },
+      { id: 'reportes', icon: '📈', label: 'Reportes', section: 'Admin' },
+      { id: 'caja', icon: '💰', label: 'Caja', section: 'Admin' },
+      { id: 'usuarios', icon: '👥', label: 'Usuarios', section: 'Admin' },
+      { id: 'configuracion', icon: '⚙', label: 'Config', section: 'Admin' },
     ];
     return items;
   }
@@ -295,6 +297,13 @@ class App {
           </div>
         </aside>
         <main class="main-content" id="main-content"></main>
+        <nav class="bottom-nav" id="bottom-nav">
+          ${navItems.slice(0, 5).map(n => `
+            <div class="bottom-nav-item ${this.currentPage === n.id ? 'active' : ''}" data-bpage="${n.id}" onclick="app.navigate('${n.id}')">
+              <span class="bottom-nav-icon">${n.icon}</span>
+              <span class="bottom-nav-label">${n.label}</span>
+            </div>`).join('')}
+        </nav>
       </div>`;
     this.navigate(this.currentPage);
   }
@@ -303,6 +312,8 @@ class App {
     this.currentPage = page;
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+    document.querySelectorAll('.bottom-nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`[data-bpage="${page}"]`)?.classList.add('active');
     const main = document.getElementById('main-content');
     if (main) main.style.animation = 'none';
     if (main) { main.offsetHeight; main.style.animation = ''; }
@@ -316,6 +327,7 @@ class App {
       case 'usuarios': this.renderUsuarios(); break;
       case 'configuracion': this.renderConfiguracion(); break;
       case 'pedidos': this.renderPedidosCajero(); break;
+      case 'historial': this.renderHistorial(); break;
     }
   }
 
@@ -1292,62 +1304,100 @@ class App {
   /* ==================== USUARIOS ==================== */
   async renderUsuarios() {
     const main = document.getElementById('main-content');
-    main.innerHTML = `
-      <div class="page-header">
-        <div><h1>Gestion de Usuarios</h1><div class="subtitle">Administra los miembros de tu equipo</div></div>
-      </div>
-      <button class="btn btn-primary" style="margin-bottom:20px" onclick="app.showModalUsuario()">+ Nuevo Usuario</button>
-      <div class="card">
-        <div class="empty-state" style="padding:24px"><div class="empty-icon">👥</div><h4>Agregar Usuarios</h4><p>Crea cuentas para meseros, cajeros y administradores de tu restaurante.</p></div>
-      </div>`;
+    main.innerHTML = '<div class="empty-state"><div class="spinner" style="border-color:var(--primary);border-top-color:transparent;width:32px;height:32px"></div></div>';
+    try {
+      const usuarios = await api.getUsuarios();
+      main.innerHTML = `
+        <div class="page-header">
+          <div><h1>Gestion de Usuarios</h1><div class="subtitle">${usuarios.length} usuario(s) registrado(s)</div></div>
+          <button class="btn btn-primary" onclick="app.showModalUsuario()">+ Nuevo</button>
+        </div>
+        <div class="usuarios-grid">
+          ${usuarios.length === 0 ? '<div class="empty-state"><div class="empty-icon">👥</div><h4>Sin usuarios</h4><p>Crea el primer usuario del equipo.</p></div>' :
+          usuarios.map(u => `
+            <div class="usuario-card">
+              <div class="usuario-avatar">${(u.nombre || 'U').substring(0,2).toUpperCase()}</div>
+              <div class="usuario-info">
+                <div class="usuario-name">${u.nombre}</div>
+                <div class="usuario-email">${u.email}</div>
+                <div class="usuario-badges">
+                  <span class="badge badge-${u.funcion === 'administrador' ? 'primary' : u.funcion === 'cajero' ? 'warning' : 'info'}">${u.funcion}</span>
+                  <span class="badge badge-${u.activo ? 'success' : 'danger'}">${u.activo ? 'Activo' : 'Inactivo'}</span>
+                </div>
+              </div>
+              <div class="usuario-actions">
+                <button class="btn btn-sm btn-outline" onclick="app.showModalUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}', '${u.email}', '${u.funcion}', ${u.activo})">Editar</button>
+                <button class="btn btn-sm btn-danger-outline" onclick="app.deleteUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}')">Eliminar</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+    } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
 
-  showModalUsuario() {
+  showModalUsuario(id, nombre, email, funcion, activo) {
+    const isEdit = !!id;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     overlay.innerHTML = `
       <div class="modal" style="max-width:420px">
         <div class="modal-header">
-          <h2>Nuevo Usuario</h2>
+          <h2>${isEdit ? 'Editar' : 'Nuevo'} Usuario</h2>
           <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-group"><label>Nombre</label><input type="text" id="usr-nombre" placeholder="Nombre completo"></div>
-          <div class="form-group"><label>Email</label><input type="email" id="usr-email" placeholder="email@ejemplo.com"></div>
-          <div class="form-group"><label>Contrasena</label><input type="password" id="usr-pass" placeholder="Minimo 6 caracteres"></div>
-          <div class="form-group"><label>Rol del Sistema</label>
-            <select id="usr-rol">
-              <option value="operador">Operador</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
+          <div class="form-group"><label>Nombre</label><input type="text" id="usr-nombre" value="${nombre || ''}" placeholder="Nombre completo"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="usr-email" value="${email || ''}" placeholder="email@ejemplo.com"></div>
+          ${isEdit ? '<div class="form-group"><label>Nueva Contrasena (dejar vacio para mantener)</label><input type="password" id="usr-pass" placeholder="Dejar vacio si no cambia"></div>' :
+          '<div class="form-group"><label>Contrasena</label><input type="password" id="usr-pass" placeholder="Minimo 6 caracteres"></div>'}
           <div class="form-group"><label>Funcion / Puesto</label>
             <select id="usr-funcion">
-              <option value="administrador">Administrador (acceso total)</option>
-              <option value="cajero">Cajero (cobros y pedidos)</option>
-              <option value="moso">Moso (tomar pedidos)</option>
+              <option value="administrador" ${funcion === 'administrador' ? 'selected' : ''}>Administrador (acceso total)</option>
+              <option value="cajero" ${funcion === 'cajero' ? 'selected' : ''}>Cajero (cobros y pedidos)</option>
+              <option value="moso" ${funcion === 'moso' ? 'selected' : ''}>Moso (tomar pedidos)</option>
             </select>
           </div>
+          ${isEdit ? `
+          <div class="form-group"><label>Estado</label>
+            <select id="usr-activo">
+              <option value="1" ${activo ? 'selected' : ''}>Activo</option>
+              <option value="0" ${!activo ? 'selected' : ''}>Inactivo</option>
+            </select>
+          </div>` : ''}
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
-          <button class="btn btn-primary" onclick="app.saveUsuario()">Crear Usuario</button>
+          <button class="btn btn-primary" onclick="app.saveUsuario(${isEdit ? id : 'null'})">${isEdit ? 'Guardar' : 'Crear'}</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
   }
 
-  async saveUsuario() {
+  async saveUsuario(id) {
     const data = {
       nombre: document.getElementById('usr-nombre').value,
       email: document.getElementById('usr-email').value,
-      password: document.getElementById('usr-pass').value,
-      rol: document.getElementById('usr-rol').value,
       funcion: document.getElementById('usr-funcion').value,
     };
-    if (!data.nombre || !data.email || !data.password) { this.toast('Todos los campos son obligatorios', 'error'); return; }
-    try { await api.registerUser(data); document.querySelector('.modal-overlay')?.remove(); this.toast('Usuario creado exitosamente'); }
+    const pass = document.getElementById('usr-pass').value;
+    if (pass) data.password = pass;
+    const activoEl = document.getElementById('usr-activo');
+    if (activoEl) data.activo = activoEl.value === '1';
+    if (!data.nombre || !data.email) { this.toast('Nombre y email son obligatorios', 'error'); return; }
+    if (!id && !pass) { this.toast('La contrasena es obligatoria para nuevos usuarios', 'error'); return; }
+    try {
+      if (id) { await api.updateUsuario(id, data); }
+      else { await api.registerUser({ ...data, password: pass, rol: 'operador' }); }
+      document.querySelector('.modal-overlay')?.remove();
+      this.toast(id ? 'Usuario actualizado' : 'Usuario creado');
+      this.renderUsuarios();
+    } catch (err) { this.toast(err.message, 'error'); }
+  }
+
+  async deleteUsuario(id, nombre) {
+    if (!confirm(`Eliminar a ${nombre}? Esta accion no se puede deshacer.`)) return;
+    try { await api.deleteUsuario(id); this.toast('Usuario eliminado'); this.renderUsuarios(); }
     catch (err) { this.toast(err.message, 'error'); }
   }
 
@@ -1359,16 +1409,25 @@ class App {
       const emp = await api.getEmpresa();
       main.innerHTML = `
         <div class="page-header">
-          <div><h1>Configuracion</h1><div class="subtitle">Datos de tu restaurante</div></div>
+          <div><h1>Configuracion</h1><div class="subtitle">Datos de tu restaurante y cuenta</div></div>
         </div>
-        <div class="card" style="max-width:600px">
-          <div class="card-header"><h3>Empresa</h3></div>
-          <div class="form-group"><label>Nombre del Restaurante</label><input type="text" id="cfg-nombre" value="${emp.nombre || ''}"></div>
-          <div class="form-group"><label>Telefono</label><input type="text" id="cfg-telefono" value="${emp.telefono || ''}"></div>
-          <div class="form-group"><label>Direccion</label><input type="text" id="cfg-direccion" value="${emp.direccion || ''}"></div>
-          <div class="form-group"><label>Email</label><input type="email" value="${emp.email || ''}" disabled style="opacity:0.6"></div>
-          <div class="form-group"><label>Plan</label><input type="text" value="${emp.plan || 'basico'}" disabled style="opacity:0.6"></div>
-          <button class="btn btn-primary" onclick="app.saveConfiguracion()">Guardar Cambios</button>
+        <div class="config-grid">
+          <div class="card">
+            <div class="card-header"><h3>Datos del Restaurante</h3></div>
+            <div class="form-group"><label>Nombre del Restaurante</label><input type="text" id="cfg-nombre" value="${emp.nombre || ''}"></div>
+            <div class="form-group"><label>Telefono</label><input type="text" id="cfg-telefono" value="${emp.telefono || ''}"></div>
+            <div class="form-group"><label>Direccion</label><input type="text" id="cfg-direccion" value="${emp.direccion || ''}"></div>
+            <div class="form-group"><label>Email</label><input type="email" value="${emp.email || ''}" disabled style="opacity:0.6"></div>
+            <div class="form-group"><label>Plan</label><input type="text" value="${emp.plan || 'basico'}" disabled style="opacity:0.6"></div>
+            <button class="btn btn-primary" onclick="app.saveConfiguracion()">Guardar Cambios</button>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Cambiar Contrasena</h3></div>
+            <div class="form-group"><label>Contrasena Actual</label><input type="password" id="cfg-pass-actual" placeholder="Tu contrasena actual"></div>
+            <div class="form-group"><label>Nueva Contrasena</label><input type="password" id="cfg-pass-nueva" placeholder="Minimo 6 caracteres"></div>
+            <div class="form-group"><label>Confirmar Contrasena</label><input type="password" id="cfg-pass-confirm" placeholder="Repite la nueva contrasena"></div>
+            <button class="btn btn-warning" onclick="app.changeMyPassword()">Cambiar Contrasena</button>
+          </div>
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
@@ -1388,6 +1447,67 @@ class App {
       if (empresaEl) empresaEl.textContent = nombre;
       this.toast('Configuracion guardada');
     } catch (err) { this.toast(err.message, 'error'); }
+  }
+
+  async changeMyPassword() {
+    const actual = document.getElementById('cfg-pass-actual').value;
+    const nueva = document.getElementById('cfg-pass-nueva').value;
+    const confirm = document.getElementById('cfg-pass-confirm').value;
+    if (!actual || !nueva || !confirm) { this.toast('Todos los campos son obligatorios', 'error'); return; }
+    if (nueva.length < 6) { this.toast('Minimo 6 caracteres', 'error'); return; }
+    if (nueva !== confirm) { this.toast('Las contrasenas no coinciden', 'error'); return; }
+    try {
+      await api.changePassword({ current_password: actual, new_password: nueva });
+      document.getElementById('cfg-pass-actual').value = '';
+      document.getElementById('cfg-pass-nueva').value = '';
+      document.getElementById('cfg-pass-confirm').value = '';
+      this.toast('Contrasena actualizada');
+    } catch (err) { this.toast(err.message, 'error'); }
+  }
+
+  /* ==================== HISTORIAL ==================== */
+  async renderHistorial() {
+    const main = document.getElementById('main-content');
+    main.innerHTML = '<div class="empty-state"><div class="spinner" style="border-color:var(--primary);border-top-color:transparent;width:32px;height:32px"></div></div>';
+    try {
+      const params = new URLSearchParams();
+      const estadoEl = document.getElementById('hist-estado');
+      const fechaIniEl = document.getElementById('hist-fecha-ini');
+      const fechaFinEl = document.getElementById('hist-fecha-fin');
+      if (estadoEl?.value) params.set('estado', estadoEl.value);
+      if (fechaIniEl?.value) params.set('fecha_inicio', fechaIniEl.value);
+      if (fechaFinEl?.value) params.set('fecha_fin', fechaFinEl.value);
+      const pedidos = await api.getHistorialPedidos(params.toString());
+      main.innerHTML = `
+        <div class="page-header">
+          <div><h1>Historial de Pedidos</h1><div class="subtitle">${pedidos.length} pedido(s)</div></div>
+        </div>
+        <div class="filtros-bar">
+          <div class="form-group" style="margin:0"><select id="hist-estado" onchange="app.renderHistorial()">
+            <option value="">Todos</option><option value="abierto">Abierto</option><option value="pagado">Pagado</option><option value="cancelado">Cancelado</option>
+          </select></div>
+          <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-ini" onchange="app.renderHistorial()"></div>
+          <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-fin" onchange="app.renderHistorial()"></div>
+          <button class="btn btn-outline" onclick="app.renderHistorial()">Actualizar</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Mesa</th><th>Moso</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
+            <tbody>
+              ${pedidos.length === 0 ? '<tr><td colspan="6" class="empty-row">Sin pedidos encontrados</td></tr>' :
+              pedidos.map(p => `
+                <tr>
+                  <td>${p.numero}</td>
+                  <td>${p.mesa_numero ? 'Mesa ' + p.mesa_numero : '-'}</td>
+                  <td>${p.usuario_nombre || '-'}</td>
+                  <td class="mono">S/ ${p.total?.toFixed(2) || '0.00'}</td>
+                  <td><span class="badge badge-${p.estado === 'pagado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">${p.estado}</span></td>
+                  <td>${new Date(p.created_at).toLocaleDateString('es-PE')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
 }
 
