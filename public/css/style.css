@@ -2141,6 +2141,86 @@ td strong { font-weight: 600; }
   white-space: nowrap;
 }
 
+/* ========== HISTORIAL CARDS ========== */
+.historial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.historial-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: var(--transition);
+}
+.historial-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+.historial-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.historial-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+/* ========== MENU PRODUCT & CATEGORY CARDS ========== */
+.menu-product-list, .menu-cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.menu-product-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.menu-product-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+.menu-product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.menu-product-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+.menu-cat-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.menu-cat-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-sm);
+}
+.menu-cat-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* ========== SPECTACULAR: REPORTS VISUAL BAR ========== */
 .report-bar-container {
   background: var(--bg);

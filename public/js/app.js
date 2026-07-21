@@ -1454,47 +1454,46 @@ class App {
           <button class="tab" onclick="app.showMenuTab('categorias', this)">Categorias</button>
         </div>
         <div id="menu-tab-productos">
-          <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="app.showModalProducto()">+ Nuevo Producto</button></div>
-          <div class="card" style="padding:0;overflow:hidden">
-            <div class="table-container">
-              <table>
-                <thead><tr><th>Producto</th><th>Categoria</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  ${prods.map(p => `
-                    <tr>
-                      <td><div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${this.getEmoji(p.nombre)}</span><strong>${p.nombre}</strong></div></td>
-                      <td>${p.categoria_nombre || '-'}</td>
-                      <td><strong style="color:var(--primary)">${this.formatMoney(p.precio)}</strong></td>
-                      <td>${p.stock >= 0 ? `<span class="badge badge-warning">${p.stock}</span>` : '<span class="badge badge-info">Ilimitado</span>'}</td>
-                      <td><span class="badge badge-${p.disponible ? 'success' : 'danger'}">${p.disponible ? 'Disponible' : 'Agotado'}</span></td>
-                      <td><button class="btn btn-ghost btn-sm" onclick='app.showModalProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editar</button></td>
-                    </tr>`).join('')}
-                  ${prods.length === 0 ? '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No hay productos</td></tr>' : ''}
-                </tbody>
-              </table>
-            </div>
+          <div style="margin-bottom:16px"><button class="btn btn-primary btn-ripple" onclick="app.showModalProducto()" style="border-radius:12px">+ Nuevo Producto</button></div>
+          <div class="menu-product-list">
+            ${prods.length === 0 ? '<div class="empty-state" style="padding:48px"><div class="empty-visual" style="width:64px;height:64px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px">📦</div><h4>Sin productos</h4><p>Agrega tu primer producto</p></div>' :
+            prods.map((p, i) => `
+              <div class="menu-product-card fade-up" style="animation-delay:${i * 0.03}s">
+                <div class="menu-product-info">
+                  <span style="font-size:28px">${this.getEmoji(p.nombre)}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+                    <div style="font-size:12px;color:var(--text-muted)">${p.categoria_nombre || 'Sin categoria'}</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:16px;font-weight:800;color:var(--primary)">${this.formatMoney(p.precio)}</div>
+                    <div style="font-size:11px;margin-top:2px">${p.stock >= 0 ? `<span class="badge badge-warning" style="font-size:9px">Stock: ${p.stock}</span>` : '<span class="badge badge-info" style="font-size:9px">Ilimitado</span>'} <span class="badge badge-${p.disponible ? 'success' : 'danger'}" style="font-size:9px">${p.disponible ? 'OK' : 'No'}</span></div>
+                  </div>
+                </div>
+                <div class="menu-product-actions">
+                  <button class="btn btn-outline btn-sm btn-ripple" onclick='app.showModalProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})' style="flex:1;border-radius:10px">Editar</button>
+                </div>
+              </div>`).join('')}
           </div>
         </div>
         <div id="menu-tab-categorias" class="hidden">
-          <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="app.showModalCategoria()">+ Nueva Categoria</button></div>
-          <div class="card" style="padding:0;overflow:hidden">
-            <div class="table-container">
-              <table>
-                <thead><tr><th>Nombre</th><th>Orden</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  ${cats.map(c => `
-                    <tr>
-                      <td><strong>${c.nombre}</strong></td>
-                      <td>${c.orden}</td>
-                      <td style="display:flex;gap:4px">
-                        <button class="btn btn-ghost btn-sm" onclick="app.showModalCategoria(${JSON.stringify(c).replace(/'/g, "&#39;")})">Editar</button>
-                        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="app.deleteCategoria('${c.id}')">Eliminar</button>
-                      </td>
-                    </tr>`).join('')}
-                  ${cats.length === 0 ? '<tr><td colspan="3" style="text-align:center;padding:32px;color:var(--text-muted)">No hay categorias</td></tr>' : ''}
-                </tbody>
-              </table>
-            </div>
+          <div style="margin-bottom:16px"><button class="btn btn-primary btn-ripple" onclick="app.showModalCategoria()" style="border-radius:12px">+ Nueva Categoria</button></div>
+          <div class="menu-cat-list">
+            ${cats.length === 0 ? '<div class="empty-state" style="padding:48px"><div class="empty-visual" style="width:64px;height:64px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px">📂</div><h4>Sin categorias</h4><p>Crea tu primera categoria</p></div>' :
+            cats.map((c, i) => `
+              <div class="menu-cat-card fade-up" style="animation-delay:${i * 0.03}s">
+                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+                  <div style="width:40px;height:40px;border-radius:12px;background:var(--primary-50);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--primary);flex-shrink:0">${c.orden || '-'}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14px;font-weight:700;color:var(--text)">${c.nombre}</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Orden: ${c.orden || 0}</div>
+                  </div>
+                </div>
+                <div class="menu-cat-actions">
+                  <button class="btn btn-outline btn-sm" onclick="app.showModalCategoria(${JSON.stringify(c).replace(/'/g, "&#39;")})">Editar</button>
+                  <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="app.deleteCategoria('${c.id}')">Eliminar</button>
+                </div>
+              </div>`).join('')}
           </div>
         </div>`;
       window._menuCats = cats;
@@ -1984,6 +1983,8 @@ class App {
       if (fechaIniEl?.value) params.set('fecha_inicio', fechaIniEl.value);
       if (fechaFinEl?.value) params.set('fecha_fin', fechaFinEl.value);
       const pedidos = await api.getHistorialPedidos(params.toString());
+      const mpIcons = { efectivo: '💵', tarjeta: '💳', yape: '📱', plin: '📲', transferencia: '🏦' };
+      const mpLabels = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', yape: 'Yape', plin: 'Plin', transferencia: 'Transferencia' };
       main.innerHTML = `
         <div class="gradient-header" style="background:linear-gradient(135deg, #7c3aed, #8b5cf6, #a78bfa)">
           <h1>Historial</h1>
@@ -1991,32 +1992,37 @@ class App {
         </div>
         <div class="filtros-bar fade-up">
           <div class="form-group" style="margin:0"><select id="hist-estado" onchange="app.renderHistorial()">
-            <option value="">Todos</option><option value="abierto">Abierto</option><option value="pagado">Pagado</option><option value="cancelado">Cancelado</option>
+            <option value="">Todos</option><option value="abierto">Abierto</option><option value="cerrado">Cobrado</option><option value="cancelado">Cancelado</option>
           </select></div>
           <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-ini" onchange="app.renderHistorial()"></div>
           <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-fin" onchange="app.renderHistorial()"></div>
           <button class="btn btn-primary btn-ripple" onclick="app.renderHistorial()" style="border-radius:10px">Actualizar</button>
         </div>
-        <div class="table-container fade-up fade-up-1" style="border-radius:var(--radius-lg);overflow:hidden">
-          <table class="data-table">
-            <thead><tr><th>#</th><th>Mesa</th><th>Moso</th><th>Pago</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
-            <tbody>
-              ${pedidos.length === 0 ? '<tr><td colspan="7" class="empty-row" style="padding:48px">Sin pedidos encontrados</td></tr>' :
-              pedidos.map((p, i) => {
-                const mpLabels = { efectivo: '💵', tarjeta: '💳', yape: '📱', plin: '📲', transferencia: '🏦' };
-                return `
-                <tr class="fade-up" style="animation-delay:${i * 0.03}s">
-                  <td style="font-family:monospace;font-weight:700;color:var(--primary)">${p.numero || p.id.substring(0,6).toUpperCase()}</td>
-                  <td>${p.mesa_numero ? `<span style="font-weight:600">Mesa ${p.mesa_numero}</span>` : '-'}</td>
-                  <td>${p.usuario_nombre || '-'}</td>
-                  <td title="${p.metodo_pago || 'efectivo'}">${mpLabels[p.metodo_pago] || '💵'}</td>
-                  <td class="mono" style="font-size:15px;font-weight:700;color:var(--success)">${this.formatMoney(p.total)}</td>
-                  <td><span class="badge badge-${p.estado === 'pagado' || p.estado === 'cerrado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">${p.estado}</span></td>
-                  <td style="color:var(--text-muted)">${new Date(p.created_at).toLocaleDateString('es-PE')}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
+        <div class="historial-list fade-up fade-up-1">
+          ${pedidos.length === 0 ? '<div class="empty-state" style="padding:48px"><div class="empty-visual" style="width:64px;height:64px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px">📋</div><h4>Sin pedidos</h4><p>No se encontraron pedidos con los filtros seleccionados</p></div>' :
+          pedidos.map((p, i) => {
+            const badge = p.estado === 'cerrado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning';
+            const badgeText = p.estado === 'cerrado' ? 'Cobrado' : p.estado;
+            return `
+            <div class="historial-card fade-up" style="animation-delay:${i * 0.03}s">
+              <div class="historial-card-top">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="font-family:monospace;font-weight:700;color:var(--primary);font-size:15px">${p.numero || p.id.substring(0,6).toUpperCase()}</span>
+                  <span class="badge badge-${badge}" style="font-size:10px">${badgeText}</span>
+                </div>
+                <span style="font-size:15px;font-weight:800;color:var(--success)">${this.formatMoney(p.total)}</span>
+              </div>
+              <div class="historial-card-bottom">
+                <span>${p.mesa_numero ? `Mesa ${p.mesa_numero}` : 'Sin mesa'}</span>
+                <span>·</span>
+                <span>${p.usuario_nombre || '-'}</span>
+                <span>·</span>
+                <span>${mpIcons[p.metodo_pago] || '💵'} ${mpLabels[p.metodo_pago] || 'Efectivo'}</span>
+                <span>·</span>
+                <span style="color:var(--text-muted)">${new Date(p.created_at).toLocaleDateString('es-PE')}</span>
+              </div>
+            </div>`;
+          }).join('')}
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
