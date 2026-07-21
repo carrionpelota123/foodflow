@@ -7,7 +7,7 @@ const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   try {
     const { nombre_empresa, email_empresa, telefono, nombre_admin, email, password } = req.body;
 
@@ -15,7 +15,7 @@ router.post('/register', (req, res) => {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
-    const existing = db.prepare('SELECT id FROM empresas WHERE email = ?').get(email_empresa);
+    const existing = await db.prepare('SELECT id FROM empresas WHERE email = ?').get(email_empresa);
     if (existing) {
       return res.status(400).json({ error: 'El email de la empresa ya está registrado' });
     }
@@ -35,22 +35,24 @@ router.post('/register', (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'admin')
     `);
 
-    const transaction = db.transaction(() => {
-      insertEmpresa.run(empresaId, nombre_empresa, email_empresa, telefono || null, now, fin);
-      insertUsuario.run(usuarioId, empresaId, nombre_admin, email, hashedPassword);
+    const transaction = db.transaction(async () => {
+      await insertEmpresa.run(empresaId, nombre_empresa, email_empresa, telefono || null, now, fin);
+      await insertUsuario.run(usuarioId, empresaId, nombre_admin, email, hashedPassword);
 
       const defaultCats = ['Entradas', 'Platos Fuertes', 'Bebres', 'Postres'];
       const insertCat = db.prepare('INSERT INTO categorias (id, empresa_id, nombre, orden) VALUES (?, ?, ?, ?)');
-      defaultCats.forEach((cat, i) => insertCat.run(uuidv4(), empresaId, cat, i + 1));
+      for (let i = 0; i < defaultCats.length; i++) {
+        await insertCat.run(uuidv4(), empresaId, defaultCats[i], i + 1);
+      }
 
       for (let i = 1; i <= 10; i++) {
-        db.prepare('INSERT INTO mesas (id, empresa_id, numero, capacidad) VALUES (?, ?, ?, ?)').run(
+        await db.prepare('INSERT INTO mesas (id, empresa_id, numero, capacidad) VALUES (?, ?, ?, ?)').run(
           uuidv4(), empresaId, i, i <= 4 ? 2 : 4
         );
       }
     });
 
-    transaction();
+    await transaction();
 
     const token = jwt.sign(
       { id: usuarioId, empresa_id: empresaId, email, rol: 'admin', funcion: 'administrador', nombre: nombre_admin },
@@ -65,7 +67,7 @@ router.post('/register', (req, res) => {
   }
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -73,7 +75,7 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña son obligatorios' });
     }
 
-    const user = db.prepare(`
+    const user = await db.prepare(`
       SELECT u.*, e.nombre as empresa_nombre, e.activa, e.suscripcion_fin
       FROM usuarios u
       JOIN empresas e ON u.empresa_id = e.id
@@ -118,9 +120,9 @@ router.post('/login', (req, res) => {
   }
 });
 
-router.get('/me', authenticateToken, (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = db.prepare(`
+    const user = await db.prepare(`
       SELECT u.id, u.nombre, u.email, u.rol, u.funcion, u.empresa_id, e.nombre as empresa_nombre, e.plan
       FROM usuarios u JOIN empresas e ON u.empresa_id = e.id
       WHERE u.id = ?
@@ -133,9 +135,9 @@ router.get('/me', authenticateToken, (req, res) => {
   }
 });
 
-router.get('/empresa', authenticateToken, (req, res) => {
+router.get('/empresa', authenticateToken, async (req, res) => {
   try {
-    const empresa = db.prepare('SELECT id, nombre, email, telefono, direccion, plan FROM empresas WHERE id = ?').get(req.user.empresa_id);
+    const empresa = await db.prepare('SELECT id, nombre, email, telefono, direccion, plan FROM empresas WHERE id = ?').get(req.user.empresa_id);
     if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' });
     res.json(empresa);
   } catch (err) {
@@ -143,12 +145,12 @@ router.get('/empresa', authenticateToken, (req, res) => {
   }
 });
 
-router.put('/empresa', authenticateToken, (req, res) => {
+router.put('/empresa', authenticateToken, async (req, res) => {
   try {
     if (req.user.rol !== 'admin') return res.status(403).json({ error: 'Sin permisos' });
     const { nombre, telefono, direccion } = req.body;
     if (!nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
-    db.prepare('UPDATE empresas SET nombre = ?, telefono = ?, direccion = ? WHERE id = ?')
+    await db.prepare('UPDATE empresas SET nombre = ?, telefono = ?, direccion = ? WHERE id = ?')
       .run(nombre, telefono || null, direccion || null, req.user.empresa_id);
     res.json({ ok: true, nombre });
   } catch (err) {
@@ -156,7 +158,7 @@ router.put('/empresa', authenticateToken, (req, res) => {
   }
 });
 
-router.post('/register-user', authenticateToken, (req, res) => {
+router.post('/register-user', authenticateToken, async (req, res) => {
   try {
     if (req.user.rol !== 'superadmin' && req.user.rol !== 'admin') {
       return res.status(403).json({ error: 'Sin permisos' });
@@ -169,13 +171,13 @@ router.post('/register-user', authenticateToken, (req, res) => {
 
     const empresa_id = req.user.rol === 'superadmin' ? (req.body.empresa_id || req.user.empresa_id) : req.user.empresa_id;
 
-    const existing = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email);
+    const existing = await db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email);
     if (existing) return res.status(400).json({ error: 'Email ya registrado' });
 
     const id = uuidv4();
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    db.prepare('INSERT INTO usuarios (id, empresa_id, nombre, email, password, rol, funcion) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    await db.prepare('INSERT INTO usuarios (id, empresa_id, nombre, email, password, rol, funcion) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .run(id, empresa_id, nombre, email, hashedPassword, rol, funcion || 'administrador');
 
     res.status(201).json({ id, nombre, email, rol, funcion: funcion || 'administrador' });
@@ -185,58 +187,58 @@ router.post('/register-user', authenticateToken, (req, res) => {
   }
 });
 
-router.get('/usuarios', authenticateToken, (req, res) => {
+router.get('/usuarios', authenticateToken, async (req, res) => {
   try {
     if (req.user.rol === 'superadmin' && req.query.empresa_id) {
-      const users = db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.query.empresa_id);
+      const users = await db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.query.empresa_id);
       return res.json(users);
     }
-    const users = db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.user.empresa_id);
+    const users = await db.prepare('SELECT id, nombre, email, rol, funcion, activo, created_at FROM usuarios WHERE empresa_id = ? ORDER BY created_at DESC').all(req.user.empresa_id);
     res.json(users);
   } catch (err) { res.status(500).json({ error: 'Error al obtener usuarios' }); }
 });
 
-router.put('/usuarios/:id', authenticateToken, (req, res) => {
+router.put('/usuarios/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.rol !== 'admin' && req.user.rol !== 'superadmin') return res.status(403).json({ error: 'Sin permisos' });
     const { nombre, email, funcion, password, activo } = req.body;
-    const user = db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
+    const user = await db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
     if (password) {
       const hashed = bcrypt.hashSync(password, 10);
-      db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, password = ?, activo = ? WHERE id = ?')
+      await db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, password = ?, activo = ? WHERE id = ?')
         .run(nombre || user.nombre, email || user.email, funcion || user.funcion, hashed, activo !== undefined ? (activo ? 1 : 0) : user.activo, req.params.id);
     } else {
-      db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, activo = ? WHERE id = ?')
+      await db.prepare('UPDATE usuarios SET nombre = ?, email = ?, funcion = ?, activo = ? WHERE id = ?')
         .run(nombre || user.nombre, email || user.email, funcion || user.funcion, activo !== undefined ? (activo ? 1 : 0) : user.activo, req.params.id);
     }
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Error al actualizar usuario' }); }
 });
 
-router.delete('/usuarios/:id', authenticateToken, (req, res) => {
+router.delete('/usuarios/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.rol !== 'admin' && req.user.rol !== 'superadmin') return res.status(403).json({ error: 'Sin permisos' });
     if (req.params.id === req.user.id) return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
-    const user = db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
+    const user = await db.prepare('SELECT * FROM usuarios WHERE id = ? AND empresa_id = ?').get(req.params.id, req.user.empresa_id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    db.prepare('DELETE FROM usuarios WHERE id = ?').run(req.params.id);
+    await db.prepare('DELETE FROM usuarios WHERE id = ?').run(req.params.id);
     res.json({ message: 'Usuario eliminado' });
   } catch (err) { res.status(500).json({ error: 'Error al eliminar usuario' }); }
 });
 
-router.post('/change-password', authenticateToken, (req, res) => {
+router.post('/change-password', authenticateToken, async (req, res) => {
   try {
     const { current_password, new_password } = req.body;
     if (!current_password || !new_password) return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-    const user = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.user.id);
+    const user = await db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.user.id);
     if (!bcrypt.compareSync(current_password, user.password)) return res.status(401).json({ error: 'Contrasena actual incorrecta' });
-    db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(bcrypt.hashSync(new_password, 10), req.user.id);
+    await db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(bcrypt.hashSync(new_password, 10), req.user.id);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Error al cambiar contrasena' }); }
 });
 
-router.get('/pedidos-historial', authenticateToken, (req, res) => {
+router.get('/pedidos-historial', authenticateToken, async (req, res) => {
   try {
     const empresaId = req.user.empresa_id;
     const { estado, fecha_inicio, fecha_fin, busqueda } = req.query;
@@ -246,7 +248,7 @@ router.get('/pedidos-historial', authenticateToken, (req, res) => {
     if (fecha_inicio) { query += ' AND DATE(p.created_at) >= ?'; params.push(fecha_inicio); }
     if (fecha_fin) { query += ' AND DATE(p.created_at) <= ?'; params.push(fecha_fin); }
     query += ' ORDER BY p.created_at DESC LIMIT 200';
-    const pedidos = db.prepare(query).all(...params);
+    const pedidos = await db.prepare(query).all(...params);
     res.json(pedidos);
   } catch (err) { res.status(500).json({ error: 'Error al obtener historial' }); }
 });

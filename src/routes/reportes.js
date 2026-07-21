@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
-router.get('/ventas', (req, res) => {
+router.get('/ventas', async (req, res) => {
   try {
     const empresaId = req.user.rol === 'superadmin' ? (req.query.empresa_id || req.user.empresa_id) : req.user.empresa_id;
     const { fecha_inicio, fecha_fin } = req.query;
@@ -24,7 +24,7 @@ router.get('/ventas', (req, res) => {
     if (fecha_fin) { query += ' AND DATE(p.cerrado_at) <= ?'; params.push(fecha_fin); }
 
     query += ' GROUP BY DATE(p.cerrado_at) ORDER BY fecha DESC';
-    const reporte = db.prepare(query).all(...params);
+    const reporte = await db.prepare(query).all(...params);
     res.json(reporte);
   } catch (err) {
     console.error(err);
@@ -32,7 +32,7 @@ router.get('/ventas', (req, res) => {
   }
 });
 
-router.get('/productos-mas-vendidos', (req, res) => {
+router.get('/productos-mas-vendidos', async (req, res) => {
   try {
     const empresaId = req.user.rol === 'superadmin' ? (req.query.empresa_id || req.user.empresa_id) : req.user.empresa_id;
     const { fecha_inicio, fecha_fin, limite } = req.query;
@@ -52,22 +52,22 @@ router.get('/productos-mas-vendidos', (req, res) => {
     query += ' GROUP BY pr.id ORDER BY total_vendido DESC';
     if (limite) { query += ' LIMIT ?'; params.push(parseInt(limite)); }
 
-    const reporte = db.prepare(query).all(...params);
+    const reporte = await db.prepare(query).all(...params);
     res.json(reporte);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener productos más vendidos' });
   }
 });
 
-router.get('/cuadre-caja', (req, res) => {
+router.get('/cuadre-caja', async (req, res) => {
   try {
     const empresaId = req.user.rol === 'superadmin' ? (req.query.empresa_id || req.user.empresa_id) : req.user.empresa_id;
     const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
 
-    let caja = db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta' LIMIT 1").get(empresaId, fecha);
-    if (!caja) caja = db.prepare('SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? ORDER BY rowid DESC LIMIT 1').get(empresaId, fecha);
+    let caja = await db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta' LIMIT 1").get(empresaId, fecha);
+    if (!caja) caja = await db.prepare('SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? ORDER BY rowid DESC LIMIT 1').get(empresaId, fecha);
 
-    const pedidosCerrados = db.prepare(`
+    const pedidosCerrados = await db.prepare(`
       SELECT COUNT(*) as total_pedidos, COALESCE(SUM(total), 0) as total_ventas, COALESCE(SUM(impuestos), 0) as total_impuestos
       FROM pedidos
       WHERE empresa_id = ? AND estado = 'cerrado' AND DATE(cerrado_at) = ?
@@ -83,71 +83,71 @@ router.get('/cuadre-caja', (req, res) => {
   }
 });
 
-router.post('/caja/abrir', (req, res) => {
+router.post('/caja/abrir', async (req, res) => {
   try {
     const empresaId = req.user.empresa_id;
     const fecha = new Date().toISOString().split('T')[0];
     const { monto_inicial } = req.body;
 
-    const existing = db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").get(empresaId, fecha);
+    const existing = await db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").get(empresaId, fecha);
     if (existing) return res.status(400).json({ error: 'Ya hay una caja abierta hoy. Cierrala antes de abrir una nueva.' });
 
-    db.prepare("UPDATE caja SET estado = 'cerrada', cerrada_at = datetime('now') WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").run(empresaId, fecha);
+    await db.prepare("UPDATE caja SET estado = 'cerrada', cerrada_at = datetime('now') WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").run(empresaId, fecha);
 
     const id = uuidv4();
-    db.prepare('INSERT INTO caja (id, empresa_id, fecha, monto_inicial) VALUES (?, ?, ?, ?)')
+    await db.prepare('INSERT INTO caja (id, empresa_id, fecha, monto_inicial) VALUES (?, ?, ?, ?)')
       .run(id, empresaId, fecha, monto_inicial || 0);
 
-    const caja = db.prepare('SELECT * FROM caja WHERE id = ?').get(id);
+    const caja = await db.prepare('SELECT * FROM caja WHERE id = ?').get(id);
     res.status(201).json(caja);
   } catch (err) {
     res.status(500).json({ error: 'Error al abrir caja' });
   }
 });
 
-router.post('/caja/cerrar', (req, res) => {
+router.post('/caja/cerrar', async (req, res) => {
   try {
     const empresaId = req.user.empresa_id;
     const fecha = new Date().toISOString().split('T')[0];
 
-    const caja = db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").get(empresaId, fecha);
+    const caja = await db.prepare("SELECT * FROM caja WHERE empresa_id = ? AND fecha = ? AND estado = 'abierta'").get(empresaId, fecha);
     if (!caja) return res.status(400).json({ error: 'No hay caja abierta hoy' });
 
-    const resumen = db.prepare(`
+    const resumen = await db.prepare(`
       SELECT COALESCE(SUM(total), 0) as total_ventas, COALESCE(SUM(impuestos), 0) as total_impuestos
       FROM pedidos WHERE empresa_id = ? AND estado = 'cerrado' AND DATE(cerrado_at) = ?
     `).get(empresaId, fecha);
 
-    db.prepare("UPDATE caja SET estado = 'cerrada', monto_final = monto_inicial + ?, total_ventas = ?, total_impuestos = ?, cerrada_at = datetime('now') WHERE id = ?")
+    await db.prepare("UPDATE caja SET estado = 'cerrada', monto_final = monto_inicial + ?, total_ventas = ?, total_impuestos = ?, cerrada_at = datetime('now') WHERE id = ?")
       .run(resumen.total_ventas, resumen.total_ventas, resumen.total_impuestos, caja.id);
 
-    const cerrada = db.prepare('SELECT * FROM caja WHERE id = ?').get(caja.id);
+    const cerrada = await db.prepare('SELECT * FROM caja WHERE id = ?').get(caja.id);
     res.json(cerrada);
   } catch (err) {
     res.status(500).json({ error: 'Error al cerrar caja' });
   }
 });
 
-router.get('/dashboard', (req, res) => {
+router.get('/dashboard', async (req, res) => {
   try {
     const empresaId = req.user.empresa_id;
     const hoy = new Date().toISOString().split('T')[0];
 
-    const mesasTotal = db.prepare('SELECT COUNT(*) as total FROM mesas WHERE empresa_id = ?').get(empresaId);
-    const mesasOcupadas = db.prepare("SELECT COUNT(*) as total FROM mesas WHERE empresa_id = ? AND estado = 'ocupada'").get(empresaId);
-    const pedidosAbiertos = db.prepare("SELECT COUNT(*) as total FROM pedidos WHERE empresa_id = ? AND estado = 'abierto'").get(empresaId);
+    const mesasTotal = await db.prepare('SELECT COUNT(*) as total FROM mesas WHERE empresa_id = ?').get(empresaId);
+    const mesasOcupadas = await db.prepare("SELECT COUNT(*) as total FROM mesas WHERE empresa_id = ? AND estado = 'ocupada'").get(empresaId);
+    const pedidosAbiertos = await db.prepare("SELECT COUNT(*) as total FROM pedidos WHERE empresa_id = ? AND estado = 'abierto'").get(empresaId);
 
-    const ventasHoy = db.prepare(`
+    const ventasHoy = await db.prepare(`
       SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as pedidos
       FROM pedidos WHERE empresa_id = ? AND estado = 'cerrado' AND DATE(cerrado_at) = ?
     `).get(empresaId, hoy);
 
-    const ventasMes = db.prepare(`
+    const ventasMes = await db.prepare(`
       SELECT COALESCE(SUM(total), 0) as total, COUNT(*) as pedidos
       FROM pedidos WHERE empresa_id = ? AND estado = 'cerrado' AND strftime('%Y-%m', cerrado_at) = strftime('%Y-%m', 'now')
     `).get(empresaId);
 
-    const productosTop = db.prepare(`
+    const productosTop = await db.prepare(`
       SELECT pr.nombre, SUM(d.cantidad) as vendido
       FROM detalles_pedido d
       JOIN productos pr ON d.producto_id = pr.id
@@ -169,7 +169,7 @@ router.get('/dashboard', (req, res) => {
   }
 });
 
-router.get('/metodos-pago', (req, res) => {
+router.get('/metodos-pago', async (req, res) => {
   try {
     const empresaId = req.user.rol === 'superadmin' ? (req.query.empresa_id || req.user.empresa_id) : req.user.empresa_id;
     const { fecha_inicio, fecha_fin } = req.query;
@@ -185,7 +185,7 @@ router.get('/metodos-pago', (req, res) => {
     if (fecha_fin) { query += ' AND DATE(cerrado_at) <= ?'; params.push(fecha_fin); }
 
     query += ' GROUP BY metodo_pago ORDER BY total_monto DESC';
-    const reporte = db.prepare(query).all(...params);
+    const reporte = await db.prepare(query).all(...params);
     res.json(reporte);
   } catch (err) {
     console.error(err);

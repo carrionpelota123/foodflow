@@ -7,23 +7,23 @@ const router = express.Router();
 
 router.use(authenticateToken, filterByEmpresa);
 
-router.get('/categorias', (req, res) => {
+router.get('/categorias', async (req, res) => {
   try {
     const empresaId = req.empresaFilter || req.user.empresa_id;
-    const cats = db.prepare('SELECT * FROM categorias WHERE empresa_id = ? ORDER BY orden').all(empresaId);
+    const cats = await db.prepare('SELECT * FROM categorias WHERE empresa_id = ? ORDER BY orden').all(empresaId);
     res.json(cats);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener categorías' });
   }
 });
 
-router.post('/categorias', (req, res) => {
+router.post('/categorias', async (req, res) => {
   try {
     const { nombre, orden } = req.body;
     if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
 
     const id = uuidv4();
-    db.prepare('INSERT INTO categorias (id, empresa_id, nombre, orden) VALUES (?, ?, ?, ?)')
+    await db.prepare('INSERT INTO categorias (id, empresa_id, nombre, orden) VALUES (?, ?, ?, ?)')
       .run(id, req.user.empresa_id, nombre, orden || 0);
 
     res.status(201).json({ id, nombre, orden: orden || 0 });
@@ -32,15 +32,15 @@ router.post('/categorias', (req, res) => {
   }
 });
 
-router.put('/categorias/:id', (req, res) => {
+router.put('/categorias/:id', async (req, res) => {
   try {
-    const cat = db.prepare('SELECT * FROM categorias WHERE id = ? AND empresa_id = ?').get(
+    const cat = await db.prepare('SELECT * FROM categorias WHERE id = ? AND empresa_id = ?').get(
       req.params.id, req.user.empresa_id
     );
     if (!cat) return res.status(404).json({ error: 'Categoría no encontrada' });
 
     const { nombre, orden, activa } = req.body;
-    db.prepare('UPDATE categorias SET nombre = ?, orden = ?, activa = ? WHERE id = ?')
+    await db.prepare('UPDATE categorias SET nombre = ?, orden = ?, activa = ? WHERE id = ?')
       .run(nombre || cat.nombre, orden !== undefined ? orden : cat.orden, activa !== undefined ? activa : cat.activa, req.params.id);
 
     res.json({ message: 'Categoría actualizada' });
@@ -49,24 +49,24 @@ router.put('/categorias/:id', (req, res) => {
   }
 });
 
-router.delete('/categorias/:id', (req, res) => {
+router.delete('/categorias/:id', async (req, res) => {
   try {
-    const cat = db.prepare('SELECT * FROM categorias WHERE id = ? AND empresa_id = ?').get(
+    const cat = await db.prepare('SELECT * FROM categorias WHERE id = ? AND empresa_id = ?').get(
       req.params.id, req.user.empresa_id
     );
     if (!cat) return res.status(404).json({ error: 'Categoría no encontrada' });
 
-    const prods = db.prepare('SELECT COUNT(*) as count FROM productos WHERE categoria_id = ?').get(req.params.id);
+    const prods = await db.prepare('SELECT COUNT(*) as count FROM productos WHERE categoria_id = ?').get(req.params.id);
     if (prods.count > 0) return res.status(400).json({ error: 'No se puede eliminar categoría con productos' });
 
-    db.prepare('DELETE FROM categorias WHERE id = ?').run(req.params.id);
+    await db.prepare('DELETE FROM categorias WHERE id = ?').run(req.params.id);
     res.json({ message: 'Categoría eliminada' });
   } catch (err) {
     res.status(500).json({ error: 'Error al eliminar categoría' });
   }
 });
 
-router.get('/productos', (req, res) => {
+router.get('/productos', async (req, res) => {
   try {
     const empresaId = req.empresaFilter || req.user.empresa_id;
     const { categoria_id, disponible } = req.query;
@@ -77,16 +77,16 @@ router.get('/productos', (req, res) => {
     if (disponible !== undefined) { query += ' AND p.disponible = ?'; params.push(disponible); }
 
     query += ' ORDER BY c.orden, p.nombre';
-    const productos = db.prepare(query).all(...params);
+    const productos = await db.prepare(query).all(...params);
     res.json(productos);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener productos' });
   }
 });
 
-router.get('/productos/:id', (req, res) => {
+router.get('/productos/:id', async (req, res) => {
   try {
-    const prod = db.prepare(`
+    const prod = await db.prepare(`
       SELECT p.*, c.nombre as categoria_nombre
       FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id
       WHERE p.id = ? AND p.empresa_id = ?
@@ -98,23 +98,23 @@ router.get('/productos/:id', (req, res) => {
   }
 });
 
-router.post('/productos', (req, res) => {
+router.post('/productos', async (req, res) => {
   try {
     const { nombre, categoria_id, precio, descripcion, stock, imagen_url } = req.body;
     if (!nombre || !categoria_id || precio === undefined) {
       return res.status(400).json({ error: 'Nombre, categoría y precio son obligatorios' });
     }
 
-    const cat = db.prepare('SELECT id FROM categorias WHERE id = ? AND empresa_id = ?').get(
+    const cat = await db.prepare('SELECT id FROM categorias WHERE id = ? AND empresa_id = ?').get(
       categoria_id, req.user.empresa_id
     );
     if (!cat) return res.status(400).json({ error: 'Categoría no válida' });
 
     const id = uuidv4();
-    db.prepare('INSERT INTO productos (id, empresa_id, categoria_id, nombre, descripcion, precio, stock, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    await db.prepare('INSERT INTO productos (id, empresa_id, categoria_id, nombre, descripcion, precio, stock, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .run(id, req.user.empresa_id, categoria_id, nombre, descripcion || '', precio, stock || -1, imagen_url || null);
 
-    const prod = db.prepare('SELECT * FROM productos WHERE id = ?').get(id);
+    const prod = await db.prepare('SELECT * FROM productos WHERE id = ?').get(id);
     res.status(201).json(prod);
   } catch (err) {
     console.error(err);
@@ -122,16 +122,16 @@ router.post('/productos', (req, res) => {
   }
 });
 
-router.put('/productos/:id', (req, res) => {
+router.put('/productos/:id', async (req, res) => {
   try {
-    const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND empresa_id = ?').get(
+    const prod = await db.prepare('SELECT * FROM productos WHERE id = ? AND empresa_id = ?').get(
       req.params.id, req.user.empresa_id
     );
     if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const { nombre, categoria_id, precio, descripcion, stock, disponible, imagen_url } = req.body;
 
-    db.prepare(`UPDATE productos SET nombre = ?, categoria_id = ?, precio = ?, descripcion = ?, stock = ?, disponible = ?, imagen_url = ? WHERE id = ?`)
+    await db.prepare(`UPDATE productos SET nombre = ?, categoria_id = ?, precio = ?, descripcion = ?, stock = ?, disponible = ?, imagen_url = ? WHERE id = ?`)
       .run(
         nombre || prod.nombre,
         categoria_id || prod.categoria_id,
@@ -143,21 +143,21 @@ router.put('/productos/:id', (req, res) => {
         req.params.id
       );
 
-    const updated = db.prepare('SELECT * FROM productos WHERE id = ?').get(req.params.id);
+    const updated = await db.prepare('SELECT * FROM productos WHERE id = ?').get(req.params.id);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Error al actualizar producto' });
   }
 });
 
-router.delete('/productos/:id', (req, res) => {
+router.delete('/productos/:id', async (req, res) => {
   try {
-    const prod = db.prepare('SELECT * FROM productos WHERE id = ? AND empresa_id = ?').get(
+    const prod = await db.prepare('SELECT * FROM productos WHERE id = ? AND empresa_id = ?').get(
       req.params.id, req.user.empresa_id
     );
     if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
 
-    db.prepare('DELETE FROM productos WHERE id = ?').run(req.params.id);
+    await db.prepare('DELETE FROM productos WHERE id = ?').run(req.params.id);
     res.json({ message: 'Producto eliminado' });
   } catch (err) {
     res.status(500).json({ error: 'Error al eliminar producto' });
