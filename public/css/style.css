@@ -1589,3 +1589,590 @@ td strong { font-weight: 600; }
   from { transform: scale(0); }
   to { transform: scale(1); }
 }
+
+/* ========== SPECTACULAR: ANIMATIONS ========== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+}
+@keyframes pulse-occupied {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(244,63,94,0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+.fade-up { animation: fadeUp 0.4s ease both; }
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.1s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.2s; }
+.fade-up-5 { animation-delay: 0.25s; }
+.fade-up-6 { animation-delay: 0.3s; }
+
+/* ========== SPECTACULAR: STAT CARDS (OVERHAUL) ========== */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.stat-card .stat-bg-icon {
+  position: absolute;
+  right: -8px; bottom: -12px;
+  font-size: 64px;
+  opacity: 0.06;
+  pointer-events: none;
+  transition: all 0.3s;
+}
+.stat-card:hover .stat-bg-icon {
+  opacity: 0.12;
+  transform: scale(1.2) rotate(-5deg);
+}
+.stat-card .stat-value {
+  animation: countUp 0.5s ease both;
+}
+.stat-card .stat-icon-wrap {
+  transition: transform 0.3s;
+}
+.stat-card:hover .stat-icon-wrap {
+  transform: scale(1.15);
+  animation: breathe 2s infinite;
+}
+
+/* ========== SPECTACULAR: PEDIDOS ABIERTOS CARDS ========== */
+.pedido-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: slideUp 0.4s ease both;
+}
+.pedido-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--warning), var(--accent));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.pedido-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-light);
+}
+.pedido-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.pedido-card-id {
+  font-family: 'SF Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-50);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.5px;
+}
+.pedido-card-mesa {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+.pedido-card-mesa .mesa-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: pulse-glow 2s infinite;
+}
+.pedido-card-body {
+  margin-bottom: 16px;
+}
+.pedido-card-mesero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pedido-card-mesero-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--info), var(--primary));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.pedido-card-mesero-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pedido-card-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+.pedido-card-total-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.pedido-card-total-amount {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: 'SF Mono', monospace;
+}
+.pedido-card-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.pedido-card-footer .btn {
+  flex: 1;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.pedidos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .pedidos-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .pedido-card {
+    padding: 16px;
+    animation: slideUp 0.3s ease both;
+  }
+  .pedido-card-total-amount {
+    font-size: 20px;
+  }
+}
+
+/* ========== SPECTACULAR: EMPTY STATE (OVERHAUL) ========== */
+.empty-state-pedidos {
+  text-align: center;
+  padding: 60px 24px;
+  animation: fadeUp 0.5s ease both;
+}
+.empty-state-pedidos .empty-visual {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-50), var(--info-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  margin: 0 auto 20px;
+  animation: float 3s ease-in-out infinite;
+}
+.empty-state-pedidos h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.empty-state-pedidos p {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* ========== SPECTACULAR: GRADIENT HEADER CARDS ========== */
+.gradient-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, #7c3aed 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.gradient-header::after {
+  content: '';
+  position: absolute;
+  top: -50%; right: -30%;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.gradient-header h1 {
+  color: white !important;
+  font-size: 24px;
+  position: relative;
+  z-index: 1;
+}
+.gradient-header .subtitle {
+  color: rgba(255,255,255,0.7) !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== SPECTACULAR: STATUS BADGES ANIMATED ========== */
+.badge-pulse {
+  position: relative;
+}
+.badge-pulse::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: pulse-glow 2s infinite;
+  opacity: 0.3;
+}
+
+/* ========== SPECTACULAR: CAJA VISUAL ========== */
+.caja-status-ring {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 16px;
+  position: relative;
+}
+.caja-status-ring.abierta {
+  background: var(--success-bg);
+  border: 3px solid var(--success);
+  animation: pulse-glow 2s infinite;
+}
+.caja-status-ring.cerrada {
+  background: var(--danger-bg);
+  border: 3px solid var(--danger);
+}
+
+.caja-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.caja-flow-item {
+  text-align: center;
+}
+.caja-flow-item .flow-value {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'SF Mono', monospace;
+}
+.caja-flow-item .flow-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.caja-flow-arrow {
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+/* ========== SPECTACULAR: DASHBOARD ACTIVITY FEED ========== */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+  animation: fadeUp 0.3s ease both;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.activity-icon.venta { background: var(--success-bg); }
+.activity-icon.pedido { background: var(--warning-bg); }
+.activity-icon.mesa { background: var(--info-bg); }
+.activity-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+}
+.activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ========== SPECTACULAR: REPORTS VISUAL BAR ========== */
+.report-bar-container {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.report-bar-container:hover {
+  background: var(--primary-50);
+}
+.report-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-light);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.report-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ========== SPECTACULAR: MOBILE POS FLOATING ORDER ========== */
+@media (max-width: 768px) {
+  .pos-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pos-menu {
+    max-height: none;
+    overflow-y: visible;
+  }
+  .pos-order {
+    position: fixed;
+    bottom: 70px;
+    left: 12px; right: 12px;
+    max-height: 45vh;
+    overflow-y: auto;
+    z-index: 90;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    border: 1px solid var(--border-light);
+    border-bottom: none;
+    transition: transform 0.3s;
+    background: var(--bg-card);
+  }
+  .pos-order.collapsed-mobile {
+    transform: translateY(calc(100% - 60px));
+  }
+  .pos-order-toggle-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .pos-order-toggle-mobile h3 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+}
+
+/* ========== SPECTACULAR: PULSE DOT ========== */
+.pulse-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.pulse-dot.active {
+  background: var(--success);
+  animation: pulse-glow 2s infinite;
+}
+.pulse-dot.warning {
+  background: var(--warning);
+  animation: pulse-glow 2s infinite;
+}
+
+/* ========== SPECTACULAR: TOAST UPGRADE ========== */
+.toast {
+  animation: slideUp 0.3s ease both;
+}
+
+/* ========== SPECTACULAR: RIPPLE BUTTON ========== */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  width: 100%; height: 100%;
+  top: 50%; left: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: 50%;
+  opacity: 0;
+  transition: none;
+}
+.btn-ripple:active::after {
+  transform: translate(-50%, -50%) scale(4);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* ========== SPECTACULAR: MESAS MOBILE ========== */
+@media (max-width: 768px) {
+  .mesa-card {
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .mesa-card:active {
+    transform: scale(0.96);
+  }
+  .mesa-card.ocupada {
+    animation: pulse-occupied 3s infinite;
+  }
+}
+
+/* ========== SPECTACULAR: TOP PRODUCTS RANKING ========== */
+.top-rank {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.top-rank:last-child { border-bottom: none; }
+.top-rank-number {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.top-rank-number.rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
+.top-rank-number.rank-2 { background: linear-gradient(135deg, #94a3b8, #64748b); color: white; }
+.top-rank-number.rank-3 { background: linear-gradient(135deg, #cd7c2f, #b45309); color: white; }
+.top-rank-number.rank-other { background: var(--bg); color: var(--text-muted); }
+
+/* ========== SPECTACULAR: GLASS CARD ========== */
+.glass-card {
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* ========== SPECTACULAR: QUICK ACTION CARDS ========== */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.quick-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+.quick-action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
+}
+.quick-action-card:active {
+  transform: scale(0.97);
+}
+.quick-action-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: transform 0.3s;
+}
+.quick-action-card:hover .quick-action-icon {
+  transform: scale(1.15);
+  animation: breathe 2s infinite;
+}
+.quick-action-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.quick-action-count {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+}
