@@ -10,9 +10,3 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
-      - key: DB_PATH
-        value: /var/data/restaurant.db
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
