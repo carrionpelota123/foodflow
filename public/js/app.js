@@ -5,6 +5,7 @@ class App {
     this.currentMesaId = null;
     this.currentPedidoId = null;
     this.currentPedidoMesaNum = null;
+    this.currentMesaCap = null;
     this.posFilterCat = null;
     this.productEmojis = ['🍔','🍕','🌮','🥗','🍝','🍣','🥘','🍜','🍰','☕','🥤','🍺','🧁','🍩','🥞'];
     this.init();
@@ -129,9 +130,14 @@ class App {
   showLogin() {
     document.getElementById('app').innerHTML = `
       <div class="login-container">
+        <div class="login-orb login-orb-1"></div>
+        <div class="login-orb login-orb-2"></div>
+        <div class="login-orb login-orb-3"></div>
         <div class="login-box">
           <div class="login-logo">
-            <div class="logo-circle">🍽</div>
+            <div class="logo-circle">
+              <span>🍽</span>
+            </div>
             <h1>ECSYSTEM</h1>
             <p>Sistema de Gestion de Restaurantes</p>
           </div>
@@ -142,47 +148,55 @@ class App {
           </div>
 
           <div id="login-form" class="login-form">
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="email" id="login-email" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
               <label>Correo electronico</label>
-              <input type="email" id="login-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')app.doLogin()">
+              <span class="input-icon">✉</span>
             </div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="password" id="login-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
               <label>Contrasena</label>
-              <input type="password" id="login-password" placeholder="Escribe tu contrasena" onkeydown="if(event.key==='Enter')app.doLogin()">
+              <span class="input-icon">🔒</span>
             </div>
-            <button class="btn btn-primary btn-block btn-lg" onclick="app.doLogin()" id="login-btn" style="margin-top:8px">
+            <button class="btn btn-primary btn-block btn-lg btn-ripple" onclick="app.doLogin()" id="login-btn" style="margin-top:12px">
               Iniciar Sesion
             </button>
-            <p class="login-footer-text">Eres nuevo? Haz clic en "Crear Cuenta"</p>
+            <p class="login-footer-text">Eres nuevo? Haz clic en <strong>"Crear Cuenta"</strong></p>
           </div>
 
           <div id="register-form" class="login-form hidden">
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="text" id="reg-empresa" placeholder=" ">
               <label>Nombre del restaurante</label>
-              <input type="text" id="reg-empresa" placeholder="Ej: El Fogoncito">
+              <span class="input-icon">🏪</span>
             </div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="email" id="reg-email-empresa" placeholder=" ">
               <label>Email del restaurante</label>
-              <input type="email" id="reg-email-empresa" placeholder="contacto@restaurante.com">
+              <span class="input-icon">✉</span>
             </div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="text" id="reg-telefono" placeholder=" ">
               <label>Telefono</label>
-              <input type="text" id="reg-telefono" placeholder="+51 999 888 777">
+              <span class="input-icon">📱</span>
             </div>
             <div class="form-divider"><span>Datos del administrador</span></div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="text" id="reg-nombre" placeholder=" ">
               <label>Tu nombre</label>
-              <input type="text" id="reg-nombre" placeholder="Juan Perez">
+              <span class="input-icon">👤</span>
             </div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="email" id="reg-email" placeholder=" ">
               <label>Tu correo</label>
-              <input type="email" id="reg-email" placeholder="juan@email.com">
+              <span class="input-icon">✉</span>
             </div>
-            <div class="form-group">
+            <div class="form-group floating-group">
+              <input type="password" id="reg-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doRegister()">
               <label>Contrasena</label>
-              <input type="password" id="reg-password" placeholder="Minimo 6 caracteres" onkeydown="if(event.key==='Enter')app.doRegister()">
+              <span class="input-icon">🔒</span>
             </div>
-            <button class="btn btn-primary btn-block btn-lg" onclick="app.doRegister()" id="reg-btn" style="margin-top:8px">
+            <button class="btn btn-primary btn-block btn-lg btn-ripple" onclick="app.doRegister()" id="reg-btn" style="margin-top:12px">
               Crear Cuenta
             </button>
           </div>
@@ -476,27 +490,35 @@ class App {
       const f = this.getFuncion();
       const canEdit = f === 'administrador';
       main.innerHTML = `
-        <div class="page-header">
-          <div>
-            <h1>Gestion de Mesas</h1>
-            <div class="subtitle">${mesas.length} mesas totales &middot; ${libres} libres &middot; ${ocupadas} ocupadas</div>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #0891b2, #06b6d4, #22d3ee)">
+          <h1>Mesas</h1>
+          <div class="subtitle">${mesas.length} total &middot; <span style="color:#86efac">${libres} libres</span> &middot; <span style="color:#fca5a5">${ocupadas} ocupadas</span>${reservadas > 0 ? ` &middot; <span style="color:#fde68a">${reservadas} reservadas</span>` : ''}</div>
+        </div>
+        <div class="quick-actions" style="margin-bottom:24px">
+          <div class="quick-action-card fade-up fade-up-1" onclick="app.renderMesas()">
+            <div class="quick-action-icon" style="background:var(--success-bg)">🔄</div>
+            <div class="quick-action-label">Actualizar</div>
           </div>
-          <div class="page-header-actions">
-            <button class="btn btn-outline btn-sm" onclick="app.renderMesas()">↻ Actualizar</button>
-            ${canEdit ? '<button class="btn btn-primary" onclick="app.showModalMesa()">+ Nueva Mesa</button>' : ''}
+          <div class="quick-action-card fade-up fade-up-2" onclick="app.navigate('pos')">
+            <div class="quick-action-icon" style="background:var(--primary-50)">💳</div>
+            <div class="quick-action-label">Ir al POS</div>
           </div>
+          ${canEdit ? `
+          <div class="quick-action-card fade-up fade-up-3" onclick="app.showModalMesa()">
+            <div class="quick-action-icon" style="background:var(--warning-bg)">➕</div>
+            <div class="quick-action-label">Nueva Mesa</div>
+          </div>` : ''}
         </div>
 
         <div class="mesas-grid">
-          ${mesas.map(m => `
-            <div class="mesa-card ${m.estado}" onclick="app.clickMesa('${m.id}')" style="animation:fadeUp 0.3s ease ${m.numero * 0.03}s both">
-              <div class="mesa-indicator"></div>
-              <span class="mesa-icon">🪑</span>
-              <div class="mesa-num">${m.numero}</div>
-              <div class="mesa-cap">👤 ${m.capacidad} personas</div>
+          ${mesas.map((m, i) => `
+            <div class="mesa-card ${m.estado} fade-up" onclick="app.clickMesa('${m.id}')" style="animation-delay:${i * 0.04}s">
+              <div class="mesa-num">Mesa ${m.numero}</div>
+              <div class="mesa-cap">${m.capacidad} personas</div>
+              ${m.ubicacion ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px">${m.ubicacion}</div>` : ''}
               <div class="mesa-status-tag">${m.estado === 'libre' ? 'Libre' : m.estado === 'ocupada' ? 'Ocupada' : 'Reservada'}</div>
             </div>`).join('')}
-          ${mesas.length === 0 ? '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🪑</div><h4>Sin mesas</h4><p>Crea tu primera mesa para comenzar</p></div>' : ''}
+          ${mesas.length === 0 ? '<div class="empty-state" style="grid-column:1/-1"><div class="empty-visual">🪑</div><h4>Sin mesas</h4><p>Crea tu primera mesa para comenzar</p></div>' : ''}
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
@@ -507,15 +529,21 @@ class App {
       if (mesa.estado === 'ocupada' || mesa.pedido_actual) {
         this.currentPedidoId = mesa.pedido_actual?.id;
         this.currentMesaId = mesaId;
+        this.currentMesaCap = mesa.capacidad;
         this.currentPedidoMesaNum = mesa.numero;
         this.navigate('pos');
         if (this.currentPedidoId) this.loadPedidoActual();
       } else {
-        const pedido = await api.createPedido({ mesa_id: mesaId });
+        const personas = prompt(`Mesa ${mesa.numero} — Capacidad: ${mesa.capacidad}\nCuantas personas van a sentarse?`, mesa.capacidad);
+        if (personas === null) return;
+        const numPersonas = parseInt(personas);
+        if (!numPersonas || numPersonas < 1) { this.toast('Numero de personas invalido', 'error'); return; }
+        const pedido = await api.createPedido({ mesa_id: mesaId, personas: numPersonas });
         this.currentPedidoId = pedido.id;
         this.currentMesaId = mesaId;
+        this.currentMesaCap = numPersonas;
         this.currentPedidoMesaNum = mesa.numero;
-        this.toast(`Pedido creado para Mesa ${mesa.numero}`);
+        this.toast(`Pedido creado — Mesa ${mesa.numero} — ${numPersonas} persona(s)`);
         this.navigate('pos');
       }
     } catch (err) { this.toast(err.message, 'error'); }
@@ -538,7 +566,7 @@ class App {
           </div>
           <div class="form-group">
             <label>Capacidad (personas)</label>
-            <input type="number" id="mesa-cap" value="${editMesa?.capacidad || 4}" min="1">
+            <input type="number" id="mesa-cap" value="${editMesa?.capacidad || 4}" min="1" max="50" placeholder="Ej: 4">
           </div>
           <div class="form-group">
             <label>Ubicacion</label>
@@ -586,18 +614,21 @@ class App {
       const [categorias, productos] = await Promise.all([api.getCategorias(), api.getProductos('disponible=1')]);
       window._posCategorias = categorias;
       window._posProductos = productos;
-      const mesaLabel = this.currentPedidoMesaNum ? ` - Mesa ${this.currentPedidoMesaNum}` : '';
+      const mesaLabel = this.currentPedidoMesaNum ? `Mesa ${this.currentPedidoMesaNum}${this.currentMesaCap ? ' — ' + this.currentMesaCap + ' personas' : ''}` : '';
       const f = this.getFuncion();
       const canCobrar = f === 'administrador' || f === 'cajero';
       main.innerHTML = `
-        <div class="page-header">
-          <div>
-            <h1>Punto de Venta${mesaLabel}</h1>
-            <div class="subtitle">${this.currentPedidoId ? 'Pedido activo' : 'Selecciona una mesa para tomar el pedido'}</div>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #7c3aed, #6366f1, #818cf8);padding-bottom:16px">
+          <h1>Punto de Venta${mesaLabel ? ' - ' + mesaLabel : ''}</h1>
+          <div class="subtitle">${this.currentPedidoId ? 'Pedido activo' : 'Selecciona una mesa para tomar el pedido'}</div>
+          <div style="display:flex;gap:8px;margin-top:12px;position:relative;z-index:1">
+            ${this.currentPedidoId ? `<button class="btn" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:10px;font-size:12px;padding:8px 14px" onclick="app.cancelarPedidoActual()">✕ Cancelar</button>` : ''}
+            <button class="btn" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:10px;font-size:12px;padding:8px 14px" onclick="app.selectMesaForPos()">🪑 Cambiar Mesa</button>
           </div>
-          <div class="page-header-actions">
-            ${this.currentPedidoId ? `<button class="btn btn-danger btn-sm" onclick="app.cancelarPedidoActual()">Cancelar Pedido</button>` : ''}
-            <button class="btn btn-outline btn-sm" onclick="app.selectMesaForPos()">Cambiar Mesa</button>
+        </div>
+        <div style="margin:16px 0">
+          <div style="position:relative">
+            <input type="text" id="pos-search" placeholder="🔍 Buscar producto..." oninput="app.searchPos(this.value)" style="width:100%;padding:12px 16px 12px 16px;border:1.5px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;background:var(--bg-card);transition:all 0.2s" onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.1)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
           </div>
         </div>
         <div class="pos-layout">
@@ -614,26 +645,32 @@ class App {
               <span class="order-status" id="pos-order-status">${this.currentPedidoId ? 'Activo' : 'Sin pedido'}</span>
             </div>
             <div class="pos-order-items" id="pos-order-items">
-              <div class="empty-state" style="padding:32px"><div class="empty-icon">🛒</div><h4>Sin productos</h4><p>Selecciona productos del menu</p></div>
+              <div class="empty-state" style="padding:32px"><div class="empty-visual" style="width:64px;height:64px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px">🛒</div><h4 style="font-size:15px">Sin productos</h4><p style="font-size:13px;color:var(--text-muted)">Selecciona productos del menu</p></div>
             </div>
             <div class="pos-order-footer">
               <div class="order-line"><span>Subtotal</span><span id="pos-subtotal">${this.formatMoney(0)}</span></div>
               <div class="order-line"><span>IVA (16%)</span><span id="pos-iva">${this.formatMoney(0)}</span></div>
               <div class="order-line grand-total"><span>Total</span><span id="pos-total">${this.formatMoney(0)}</span></div>
               ${canCobrar ? `
-              <button class="btn btn-success btn-block btn-lg" style="margin-top:16px" id="pos-cobrar-btn" onclick="app.cobrarPedido()" ${!this.currentPedidoId ? 'disabled' : ''}>
+              <button class="btn btn-success btn-block btn-lg btn-ripple" style="margin-top:16px;border-radius:14px;min-height:52px;font-size:16px" id="pos-cobrar-btn" onclick="app.cobrarPedido()" ${!this.currentPedidoId ? 'disabled' : ''}>
                 💳 Cobrar Pedido
               </button>` : `
-              <div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:12px;padding:12px;background:var(--primary-50);border-radius:8px;border:1px dashed var(--primary-light)">
-                <div style="font-size:16px;margin-bottom:4px">🍽</div>
-                <div style="font-weight:600;color:var(--primary)">Modo Atencion</div>
-                <div style="margin-top:2px">Solo toma de pedidos. El cajero realiza el cobro.</div>
+              <div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:12px;padding:16px;background:var(--primary-50);border-radius:14px;border:1.5px dashed var(--primary-light)">
+                <div style="font-size:24px;margin-bottom:6px">🍽</div>
+                <div style="font-weight:600;color:var(--primary);font-size:13px">Modo Atencion</div>
+                <div style="margin-top:4px;font-size:12px">Solo toma de pedidos. El cajero realiza el cobro.</div>
               </div>`}
             </div>
           </div>
         </div>`;
       if (this.currentPedidoId) this.loadPedidoActual();
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
+  }
+
+  searchPos(query) {
+    const q = query.toLowerCase().trim();
+    const filtered = q ? window._posProductos.filter(p => p.nombre.toLowerCase().includes(q) || (p.descripcion || '').toLowerCase().includes(q)) : window._posProductos;
+    document.getElementById('pos-products').innerHTML = this.renderPosProducts(filtered);
   }
 
   renderPosProducts(productos) {
@@ -713,7 +750,7 @@ class App {
       const pedidoCompleto = await api.getPedido(this.currentPedidoId);
       this.toast('Pedido cobrado exitosamente');
       const mesaNum = this.currentPedidoMesaNum;
-      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null;
+      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null; this.currentMesaCap = null;
       this.showReceiptModal({ ...pedidoCompleto, mesa_numero: mesaNum });
     } catch (err) { this.toast(err.message, 'error'); }
   }
@@ -724,7 +761,7 @@ class App {
     try {
       await api.cancelarPedido(this.currentPedidoId);
       this.toast('Pedido cancelado');
-      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null;
+      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null; this.currentMesaCap = null;
       this.renderPOS();
     } catch (err) { this.toast(err.message, 'error'); }
   }
@@ -871,45 +908,44 @@ class App {
 
     overlay.innerHTML = `
       <div class="modal" style="max-width:480px">
-        <div class="modal-header">
-          <h2>Pedido Cobrado</h2>
-          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-        </div>
-        <div class="modal-body" style="padding:16px">
-          <div style="background:var(--success-bg);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px">
-            <div style="font-size:28px;margin-bottom:2px">✅</div>
-            <div style="font-size:14px;font-weight:700;color:var(--success)">Cobro Exitoso</div>
-            <div style="font-size:22px;font-weight:800;margin-top:2px">${this.formatMoney(pedido.total)}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Mesa ${mesaNum} &middot; ${fechaStr}</div>
+        <div class="modal-body" style="padding:0;text-align:center">
+          <div style="padding:32px 24px 24px;background:linear-gradient(135deg,#059669,#10b981);border-radius:24px 24px 0 0;position:relative;overflow:hidden">
+            <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.1);border-radius:50%"></div>
+            <div style="position:absolute;bottom:-30px;left:-30px;width:80px;height:80px;background:rgba(255,255,255,0.08);border-radius:50%"></div>
+            <div class="receipt-success-ring" style="position:relative;z-index:1">
+              <span style="font-size:28px;color:white">✓</span>
+            </div>
+            <div style="font-size:20px;font-weight:800;color:white;margin-top:12px;position:relative;z-index:1">Cobro Exitoso</div>
+            <div style="font-size:32px;font-weight:800;color:white;margin-top:4px;font-family:'SF Mono',monospace;position:relative;z-index:1">${this.formatMoney(pedido.total)}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:4px;position:relative;z-index:1">Mesa ${mesaNum} &middot; ${fechaStr} &middot; ${horaStr}</div>
           </div>
 
-          <div style="text-align:center;margin-bottom:12px">
-            <button class="btn btn-sm btn-outline" onclick="document.getElementById('boleta-preview-wrap').classList.toggle('hidden')" style="font-size:11px">
-              👁 Ver Boleta
+          <div style="padding:20px 24px">
+            <div class="form-group" style="margin-bottom:16px">
+              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px">Enviar por WhatsApp</label>
+              <div style="display:flex;gap:8px">
+                <input type="tel" id="receipt-phone" placeholder="999888777" style="flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;transition:all 0.2s" onfocus="this.style.borderColor='var(--success)';this.style.boxShadow='0 0 0 3px rgba(16,185,129,0.1)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+                <button class="btn btn-success btn-ripple" onclick="app.shareReceiptWhatsApp()" style="border-radius:12px;padding:12px 18px">📱 Enviar</button>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <button class="btn btn-outline" onclick="document.getElementById('boleta-preview-wrap').classList.toggle('hidden')" style="flex:1;border-radius:12px;min-height:44px">
+                👁 Ver Boleta
+              </button>
+              <button class="btn btn-primary btn-ripple" onclick="app.downloadBoletaPdf()" style="flex:1;border-radius:12px;min-height:44px">
+                📄 Descargar PDF
+              </button>
+            </div>
+
+            <div id="boleta-preview-wrap" class="hidden" style="overflow-x:auto;display:flex;justify-content:center;margin-bottom:16px;border-radius:12px;border:1px solid var(--border-light)">
+              ${boletaHtml}
+            </div>
+
+            <button class="btn btn-ghost btn-block" onclick="app.closeReceiptAndRender()" style="border-radius:12px;min-height:44px;color:var(--text-muted)">
+              Cerrar
             </button>
           </div>
-          <div id="boleta-preview-wrap" class="hidden" style="overflow-x:auto;display:flex;justify-content:center;margin-bottom:14px">
-            ${boletaHtml}
-          </div>
-
-          <div class="form-group" style="margin-bottom:12px">
-            <label style="font-size:12px">Enviar boleta por WhatsApp</label>
-            <div style="display:flex;gap:8px">
-              <input type="tel" id="receipt-phone" placeholder="Ej: 999888777" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px">
-              <button class="btn btn-success btn-sm" onclick="app.shareReceiptWhatsApp()">📱 Enviar</button>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" style="flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 16px 16px">
-          <button class="btn btn-primary btn-sm" onclick="app.downloadBoletaPdf()" style="flex:1;min-width:100px">
-            📄 PDF
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="app.printBoleta()" style="flex:1;min-width:100px">
-            🖨 Imprimir
-          </button>
-          <button class="btn btn-ghost btn-sm" onclick="app.closeReceiptAndRender()" style="width:100%;margin-top:4px">
-            Cerrar
-          </button>
         </div>
       </div>`;
 
@@ -1160,8 +1196,9 @@ class App {
     try {
       const [cats, prods] = await Promise.all([api.getCategorias(), api.getProductos()]);
       main.innerHTML = `
-        <div class="page-header">
-          <div><h1>Administracion de Menu</h1><div class="subtitle">${prods.length} productos &middot; ${cats.length} categorias</div></div>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #ea580c, #f97316, #fb923c)">
+          <h1>Menu</h1>
+          <div class="subtitle">${prods.length} productos &middot; ${cats.length} categorias</div>
         </div>
         <div class="tabs" id="menu-tabs">
           <button class="tab active" onclick="app.showMenuTab('productos', this)">Productos</button>
@@ -1498,16 +1535,25 @@ class App {
     main.innerHTML = '<div class="empty-state"><div class="spinner" style="border-color:var(--primary);border-top-color:transparent;width:32px;height:32px"></div></div>';
     try {
       const usuarios = await api.getUsuarios();
+      const adminCount = usuarios.filter(u => u.funcion === 'administrador').length;
+      const cajeroCount = usuarios.filter(u => u.funcion === 'cajero').length;
+      const mosoCount = usuarios.filter(u => u.funcion === 'moso').length;
       main.innerHTML = `
-        <div class="page-header">
-          <div><h1>Gestion de Usuarios</h1><div class="subtitle">${usuarios.length} usuario(s) registrado(s)</div></div>
-          <button class="btn btn-primary" onclick="app.showModalUsuario()">+ Nuevo</button>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #0891b2, #06b6d4, #22d3ee)">
+          <h1>Usuarios</h1>
+          <div class="subtitle">${usuarios.length} usuario(s) &middot; ${adminCount} admins &middot; ${cajeroCount} cajeros &middot; ${mosoCount} meseros</div>
+        </div>
+        <div style="margin-bottom:20px">
+          <button class="btn btn-primary btn-ripple" onclick="app.showModalUsuario()" style="border-radius:12px">+ Nuevo Usuario</button>
         </div>
         <div class="usuarios-grid">
-          ${usuarios.length === 0 ? '<div class="empty-state"><div class="empty-icon">👥</div><h4>Sin usuarios</h4><p>Crea el primer usuario del equipo.</p></div>' :
-          usuarios.map(u => `
-            <div class="usuario-card">
-              <div class="usuario-avatar">${(u.nombre || 'U').substring(0,2).toUpperCase()}</div>
+          ${usuarios.length === 0 ? '<div class="empty-state-pedidos"><div class="empty-visual">👥</div><h3>Sin usuarios</h3><p>Crea el primer usuario del equipo.</p></div>' :
+          usuarios.map((u, i) => {
+            const gradients = ['linear-gradient(135deg,#6366f1,#8b5cf6)', 'linear-gradient(135deg,#f43f5e,#e11d48)', 'linear-gradient(135deg,#06b6d4,#0891b2)', 'linear-gradient(135deg,#10b981,#059669)', 'linear-gradient(135deg,#f59e0b,#d97706)'];
+            const grad = gradients[i % gradients.length];
+            return `
+            <div class="usuario-card fade-up" style="animation-delay:${i * 0.05}s">
+              <div class="usuario-avatar" style="background:${grad};color:white;font-size:14px">${(u.nombre || 'U').substring(0,2).toUpperCase()}</div>
               <div class="usuario-info">
                 <div class="usuario-name">${u.nombre}</div>
                 <div class="usuario-email">${u.email}</div>
@@ -1520,8 +1566,8 @@ class App {
                 <button class="btn btn-sm btn-outline" onclick="app.showModalUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}', '${u.email}', '${u.funcion}', ${u.activo})">Editar</button>
                 <button class="btn btn-sm btn-danger-outline" onclick="app.deleteUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}')">Eliminar</button>
               </div>
-            </div>
-          `).join('')}
+            </div>`;
+          }).join('')}
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
@@ -1599,25 +1645,26 @@ class App {
     try {
       const emp = await api.getEmpresa();
       main.innerHTML = `
-        <div class="page-header">
-          <div><h1>Configuracion</h1><div class="subtitle">Datos de tu restaurante y cuenta</div></div>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #64748b, #475569, #334155)">
+          <h1>Configuracion</h1>
+          <div class="subtitle">Datos de tu restaurante y cuenta</div>
         </div>
         <div class="config-grid">
-          <div class="card">
-            <div class="card-header"><h3>Datos del Restaurante</h3></div>
+          <div class="card fade-up fade-up-1">
+            <div class="card-header"><h3>🏪 Datos del Restaurante</h3></div>
             <div class="form-group"><label>Nombre del Restaurante</label><input type="text" id="cfg-nombre" value="${emp.nombre || ''}"></div>
             <div class="form-group"><label>Telefono</label><input type="text" id="cfg-telefono" value="${emp.telefono || ''}"></div>
             <div class="form-group"><label>Direccion</label><input type="text" id="cfg-direccion" value="${emp.direccion || ''}"></div>
             <div class="form-group"><label>Email</label><input type="email" value="${emp.email || ''}" disabled style="opacity:0.6"></div>
             <div class="form-group"><label>Plan</label><input type="text" value="${emp.plan || 'basico'}" disabled style="opacity:0.6"></div>
-            <button class="btn btn-primary" onclick="app.saveConfiguracion()">Guardar Cambios</button>
+            <button class="btn btn-primary btn-ripple" onclick="app.saveConfiguracion()" style="border-radius:12px">Guardar Cambios</button>
           </div>
-          <div class="card">
-            <div class="card-header"><h3>Cambiar Contrasena</h3></div>
+          <div class="card fade-up fade-up-2">
+            <div class="card-header"><h3>🔒 Cambiar Contrasena</h3></div>
             <div class="form-group"><label>Contrasena Actual</label><input type="password" id="cfg-pass-actual" placeholder="Tu contrasena actual"></div>
             <div class="form-group"><label>Nueva Contrasena</label><input type="password" id="cfg-pass-nueva" placeholder="Minimo 6 caracteres"></div>
             <div class="form-group"><label>Confirmar Contrasena</label><input type="password" id="cfg-pass-confirm" placeholder="Repite la nueva contrasena"></div>
-            <button class="btn btn-warning" onclick="app.changeMyPassword()">Cambiar Contrasena</button>
+            <button class="btn btn-warning btn-ripple" onclick="app.changeMyPassword()" style="border-radius:12px">Cambiar Contrasena</button>
           </div>
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
@@ -1670,30 +1717,31 @@ class App {
       if (fechaFinEl?.value) params.set('fecha_fin', fechaFinEl.value);
       const pedidos = await api.getHistorialPedidos(params.toString());
       main.innerHTML = `
-        <div class="page-header">
-          <div><h1>Historial de Pedidos</h1><div class="subtitle">${pedidos.length} pedido(s)</div></div>
+        <div class="gradient-header" style="background:linear-gradient(135deg, #7c3aed, #8b5cf6, #a78bfa)">
+          <h1>Historial</h1>
+          <div class="subtitle">${pedidos.length} pedido(s) encontrados</div>
         </div>
-        <div class="filtros-bar">
+        <div class="filtros-bar fade-up">
           <div class="form-group" style="margin:0"><select id="hist-estado" onchange="app.renderHistorial()">
             <option value="">Todos</option><option value="abierto">Abierto</option><option value="pagado">Pagado</option><option value="cancelado">Cancelado</option>
           </select></div>
           <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-ini" onchange="app.renderHistorial()"></div>
           <div class="form-group" style="margin:0"><input type="date" id="hist-fecha-fin" onchange="app.renderHistorial()"></div>
-          <button class="btn btn-outline" onclick="app.renderHistorial()">Actualizar</button>
+          <button class="btn btn-primary btn-ripple" onclick="app.renderHistorial()" style="border-radius:10px">Actualizar</button>
         </div>
-        <div class="table-container">
+        <div class="table-container fade-up fade-up-1" style="border-radius:var(--radius-lg);overflow:hidden">
           <table class="data-table">
             <thead><tr><th>#</th><th>Mesa</th><th>Moso</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
             <tbody>
-              ${pedidos.length === 0 ? '<tr><td colspan="6" class="empty-row">Sin pedidos encontrados</td></tr>' :
-              pedidos.map(p => `
-                <tr>
-                  <td>${p.numero}</td>
-                  <td>${p.mesa_numero ? 'Mesa ' + p.mesa_numero : '-'}</td>
+              ${pedidos.length === 0 ? '<tr><td colspan="6" class="empty-row" style="padding:48px">Sin pedidos encontrados</td></tr>' :
+              pedidos.map((p, i) => `
+                <tr class="fade-up" style="animation-delay:${i * 0.03}s">
+                  <td style="font-family:monospace;font-weight:700;color:var(--primary)">${p.numero || p.id.substring(0,6).toUpperCase()}</td>
+                  <td>${p.mesa_numero ? `<span style="font-weight:600">Mesa ${p.mesa_numero}</span>` : '-'}</td>
                   <td>${p.usuario_nombre || '-'}</td>
-                  <td class="mono">S/ ${p.total?.toFixed(2) || '0.00'}</td>
+                  <td class="mono" style="font-size:15px;font-weight:700;color:var(--success)">${this.formatMoney(p.total)}</td>
                   <td><span class="badge badge-${p.estado === 'pagado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">${p.estado}</span></td>
-                  <td>${new Date(p.created_at).toLocaleDateString('es-PE')}</td>
+                  <td style="color:var(--text-muted)">${new Date(p.created_at).toLocaleDateString('es-PE')}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
