@@ -133,6 +133,9 @@ class App {
         <div class="login-orb login-orb-1"></div>
         <div class="login-orb login-orb-2"></div>
         <div class="login-orb login-orb-3"></div>
+
+        <div class="login-clock" id="login-clock"></div>
+
         <div class="login-box">
           <div class="login-logo">
             <div class="logo-circle">
@@ -203,7 +206,24 @@ class App {
 
           <div id="login-error" class="login-error hidden"></div>
         </div>
+
+        <div class="login-watermark">
+          <span>Ing. Erick Carrion</span>
+          <span class="login-watermark-sub">v1.0 &middot; ECSYSTEM</span>
+        </div>
       </div>`;
+    this.startLoginClock();
+  }
+
+  startLoginClock() {
+    const update = () => {
+      const el = document.getElementById('login-clock');
+      if (!el) return;
+      const now = new Date();
+      el.textContent = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+    update();
+    this._loginClockInterval = setInterval(update, 1000);
   }
 
   showLoginForm() {
