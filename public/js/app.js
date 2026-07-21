@@ -119,7 +119,7 @@ class App {
         <div class="login-box">
           <div class="login-logo">
             <div class="logo-circle">🍽</div>
-            <h1>FoodFlow</h1>
+            <h1>ECSYSTEM</h1>
             <p>Sistema de Gestion de Restaurantes</p>
           </div>
 
@@ -268,7 +268,7 @@ class App {
             <div class="brand-row">
               <div class="brand-icon">🍽</div>
               <div class="brand-text">
-                <h2>FoodFlow</h2>
+                <h2>ECSYSTEM</h2>
                 <div class="empresa">${this.user.empresa_nombre || 'Mi Restaurante'}</div>
               </div>
             </div>
@@ -786,7 +786,7 @@ class App {
         </div>
 
         <div style="text-align:center;margin-top:8px;font-size:8px;color:#888">
-          Software: FoodFlow v1.0
+          Software: ECSYSTEM v1.0
         </div>
       </div>`;
   }
@@ -795,7 +795,7 @@ class App {
     const now = new Date();
     const fechaStr = now.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const horaStr = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const empresa = this.user.empresa_nombre || 'FoodFlow';
+    const empresa = this.user.empresa_nombre || 'ECSYSTEM';
     const mesaNum = pedido.mesa_numero || '-';
     const detalles = pedido.detalles || [];
 

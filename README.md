@@ -1,4 +1,4 @@
-# FoodFlow - Sistema de Gestion de Restaurantes
+# ECSYSTEM - Sistema de Gestion de Restaurantes
 
 Sistema SaaS completo para la gestion de restaurantes, incluyendo punto de venta, mesas, menu, reportes, caja y boletas electronicas.
 
@@ -282,4 +282,4 @@ Proyecto de uso interno / educativo.
 
 ---
 
-*FoodFlow v1.0 - Desarrollado con Node.js*
+*ECSYSTEM v1.0 - Desarrollado con Node.js*

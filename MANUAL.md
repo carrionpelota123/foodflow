@@ -1,4 +1,4 @@
-# MANUAL DE USUARIO - FoodFlow
+# MANUAL DE USUARIO - ECSYSTEM
 
 ## Sistema de Gestion de Restaurantes
 
@@ -56,7 +56,7 @@ Si olvidaste tu contrasena, contacta al administrador del sistema.
 
 ## 3. ROLES Y PERMISOS
 
-FoodFlow maneja 3 funciones de usuario:
+ECSYSTEM maneja 3 funciones de usuario:
 
 ### Administrador
 - Acceso completo a todas las secciones
@@ -348,4 +348,4 @@ Disponible solo para **Administradores**.
 
 ---
 
-*FoodFlow v1.0 - Sistema de Gestion de Restaurantes*
+*ECSYSTEM v1.0 - Sistema de Gestion de Restaurantes*
