@@ -869,6 +869,7 @@ td strong { font-weight: 600; }
 }
 
 /* ========== POS ORDER PANEL ========== */
+.pos-order-toggle-mobile { display: none; }
 .pos-order {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -2110,6 +2111,7 @@ td strong { font-weight: 600; }
     display: flex;
     flex-direction: column;
     gap: 0;
+    padding-bottom: 70px;
   }
   .pos-menu {
     max-height: none;
@@ -2117,32 +2119,47 @@ td strong { font-weight: 600; }
   }
   .pos-order {
     position: fixed;
-    bottom: 70px;
-    left: 12px; right: 12px;
-    max-height: 45vh;
+    bottom: 68px;
+    left: 0; right: 0;
+    max-height: 55vh;
     overflow-y: auto;
     z-index: 90;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-    border: 1px solid var(--border-light);
-    border-bottom: none;
-    transition: transform 0.3s;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
+    border: none;
     background: var(--bg-card);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
   }
   .pos-order.collapsed-mobile {
-    transform: translateY(calc(100% - 60px));
+    max-height: 55vh;
+    transform: translateY(calc(100% - 52px));
+    border-radius: 16px;
+    bottom: 68px;
+    left: 8px; right: 8px;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+  }
+  .pos-order.collapsed-mobile .pos-order-header,
+  .pos-order.collapsed-mobile .pos-order-items,
+  .pos-order.collapsed-mobile .pos-order-footer {
+    display: none;
   }
   .pos-order-toggle-mobile {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
+    padding: 12px 16px;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .pos-order:not(.collapsed-mobile) .pos-order-toggle-mobile {
     border-bottom: 1px solid var(--border-light);
   }
   .pos-order-toggle-mobile h3 {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
+    margin: 0;
   }
 }
 

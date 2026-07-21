@@ -639,7 +639,14 @@ class App {
             </div>
             <div class="pos-products" id="pos-products">${this.renderPosProducts(productos)}</div>
           </div>
-          <div class="pos-order" id="pos-order">
+          <div class="pos-order collapsed-mobile" id="pos-order">
+            <div class="pos-order-toggle-mobile" onclick="app.togglePosOrder()">
+              <h3>🧾 Pedido <span id="pos-order-count-mobile" style="font-weight:400;color:var(--text-muted);font-size:13px">(0)</span></h3>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span id="pos-order-total-mobile" class="mono" style="font-size:15px;font-weight:700;color:var(--primary)">${this.formatMoney(0)}</span>
+                <span style="font-size:18px;color:var(--text-muted);transition:transform 0.3s" id="pos-order-arrow">▲</span>
+              </div>
+            </div>
             <div class="pos-order-header">
               <h3>🧾 Pedido Actual</h3>
               <span class="order-status" id="pos-order-status">${this.currentPedidoId ? 'Activo' : 'Sin pedido'}</span>
@@ -716,6 +723,10 @@ class App {
       const pedido = await api.getPedido(this.currentPedidoId);
       const itemsEl = document.getElementById('pos-order-items');
       if (!itemsEl) return;
+      const countEl = document.getElementById('pos-order-count-mobile');
+      const totalMobileEl = document.getElementById('pos-order-total-mobile');
+      if (countEl) countEl.textContent = `(${pedido.detalles?.length || 0})`;
+      if (totalMobileEl) totalMobileEl.textContent = this.formatMoney(pedido.total);
       if (!pedido.detalles || pedido.detalles.length === 0) {
         itemsEl.innerHTML = '<div class="empty-state" style="padding:32px"><div class="empty-icon">🛒</div><h4>Sin productos</h4><p>Selecciona productos del menu</p></div>';
       } else {
@@ -735,6 +746,14 @@ class App {
       document.getElementById('pos-iva').textContent = this.formatMoney(pedido.impuestos);
       document.getElementById('pos-total').textContent = this.formatMoney(pedido.total);
     } catch (err) { console.error(err); }
+  }
+
+  togglePosOrder() {
+    const order = document.getElementById('pos-order');
+    const arrow = document.getElementById('pos-order-arrow');
+    if (!order) return;
+    order.classList.toggle('collapsed-mobile');
+    if (arrow) arrow.style.transform = order.classList.contains('collapsed-mobile') ? 'rotate(0deg)' : 'rotate(180deg)';
   }
 
   async removeItem(itemId) {
