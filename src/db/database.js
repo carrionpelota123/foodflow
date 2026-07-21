@@ -128,4 +128,11 @@ try {
   }
 } catch (e) {}
 
+try {
+  const hasMetodoPago = db.prepare("PRAGMA table_info(pedidos)").all().some(col => col.name === 'metodo_pago');
+  if (!hasMetodoPago) {
+    db.exec("ALTER TABLE pedidos ADD COLUMN metodo_pago TEXT DEFAULT 'efectivo'");
+  }
+} catch (e) {}
+
 module.exports = db;

@@ -170,8 +170,10 @@ router.put('/:id/cerrar', (req, res) => {
     if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
     if (pedido.estado !== 'abierto') return res.status(400).json({ error: 'El pedido ya no está abierto' });
 
+    const { metodo_pago } = req.body;
+    const mp = metodo_pago || 'efectivo';
     const now = new Date().toISOString();
-    db.prepare("UPDATE pedidos SET estado = 'cerrado', cerrado_at = ? WHERE id = ?").run(now, req.params.id);
+    db.prepare("UPDATE pedidos SET estado = 'cerrado', cerrado_at = ?, metodo_pago = ? WHERE id = ?").run(now, mp, req.params.id);
 
     if (pedido.mesa_id) {
       const otroAbierto = db.prepare(

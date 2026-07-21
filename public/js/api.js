@@ -69,12 +69,13 @@ class ApiClient {
   createPedido(data) { return this.request('/pedidos', { method: 'POST', body: JSON.stringify(data) }); }
   addItemPedido(pedidoId, data) { return this.request(`/pedidos/${pedidoId}/items`, { method: 'POST', body: JSON.stringify(data) }); }
   removeItemPedido(pedidoId, itemId) { return this.request(`/pedidos/${pedidoId}/items/${itemId}`, { method: 'DELETE' }); }
-  cerrarPedido(id) { return this.request(`/pedidos/${id}/cerrar`, { method: 'PUT' }); }
+  cerrarPedido(id, metodo_pago) { return this.request(`/pedidos/${id}/cerrar`, { method: 'PUT', body: JSON.stringify({ metodo_pago }) }); }
   cancelarPedido(id) { return this.request(`/pedidos/${id}/cancelar`, { method: 'PUT' }); }
 
   getDashboard() { return this.request('/reportes/dashboard'); }
   getReporteVentas(params = '') { return this.request(`/reportes/ventas${params ? '?' + params : ''}`); }
   getTopProductos(params = '') { return this.request(`/reportes/productos-mas-vendidos${params ? '?' + params : ''}`); }
+  getMetodosPago(params = '') { return this.request(`/reportes/metodos-pago${params ? '?' + params : ''}`); }
   getCuadreCaja(fecha) { return this.request(`/reportes/cuadre-caja${fecha ? '?fecha=' + fecha : ''}`); }
   abrirCaja(data) { return this.request('/reportes/caja/abrir', { method: 'POST', body: JSON.stringify(data) }); }
   cerrarCaja() { return this.request('/reportes/caja/cerrar', { method: 'POST' }); }

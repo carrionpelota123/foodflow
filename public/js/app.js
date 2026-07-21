@@ -763,15 +763,123 @@ class App {
 
   async cobrarPedido() {
     if (!this.currentPedidoId) return;
-    if (!confirm('Cerrar y cobrar este pedido?')) return;
     try {
-      const cerrado = await api.cerrarPedido(this.currentPedidoId);
-      const pedidoCompleto = await api.getPedido(this.currentPedidoId);
-      this.toast('Pedido cobrado exitosamente');
+      const pedido = await api.getPedido(this.currentPedidoId);
+      const total = pedido.total || 0;
       const mesaNum = this.currentPedidoMesaNum;
-      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null; this.currentMesaCap = null;
-      this.showReceiptModal({ ...pedidoCompleto, mesa_numero: mesaNum });
+
+      const metodos = [
+        { id: 'efectivo', icon: '💵', label: 'Efectivo', color: '#10b981' },
+        { id: 'tarjeta', icon: '💳', label: 'Tarjeta', color: '#6366f1' },
+        { id: 'yape', icon: '📱', label: 'Yape', color: '#7c3aed' },
+        { id: 'plin', icon: '📲', label: 'Plin', color: '#0ea5e9' },
+        { id: 'transferencia', icon: '🏦', label: 'Transferencia', color: '#f59e0b' },
+      ];
+
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:400px">
+          <div class="modal-header">
+            <h2>Cobrar Pedido</h2>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          </div>
+          <div class="modal-body" style="text-align:center;padding-top:8px">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Mesa ${mesaNum || '-'}</div>
+            <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:20px">${this.formatMoney(total)}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;text-align:left">Metodo de pago</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="pago-metodos">
+              ${metodos.map(m => `
+                <div class="pago-metodo-card" onclick="app.selectPagoMetodo('${m.id}', this)" data-metodo="${m.id}" style="border:2px solid var(--border-light);border-radius:14px;padding:16px 10px;cursor:pointer;transition:all 0.25s;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--bg-card)">
+                  <span style="font-size:28px">${m.icon}</span>
+                  <span style="font-size:13px;font-weight:600;color:var(--text)">${m.label}</span>
+                </div>`).join('')}
+            </div>
+            <div id="pago-extras" style="margin-top:14px;display:none">
+              <div class="form-group" style="margin-bottom:10px;text-align:left">
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Monto recibido</label>
+                <input type="number" id="pago-monto-recibido" placeholder="0.00" step="0.01" oninput="app.calcCambio()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;text-align:center">
+              </div>
+              <div id="pago-cambio" style="font-size:14px;font-weight:600;color:var(--text-muted);padding:8px 0"></div>
+            </div>
+            <div id="pago-referencia" style="margin-top:14px;display:none">
+              <div class="form-group" style="text-align:left">
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Codigo / Referencia</label>
+                <input type="text" id="pago-ref-code" placeholder="Ej: 123456" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="justify-content:stretch;padding:0 20px 20px">
+            <div style="display:flex;gap:8px;width:100%">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()" style="flex:0 0 auto;border-radius:12px">Cancelar</button>
+              <button class="btn btn-success btn-ripple" id="pago-confirm-btn" onclick="app.confirmPago()" style="flex:1;border-radius:12px;min-height:48px;font-size:15px" disabled>Confirmar Pago</button>
+            </div>
+          </div>
+        </div>`;
+
+      document.body.appendChild(overlay);
+      this._pagoMetodo = null;
+      this._pagoMesaNum = mesaNum;
+      this._pagoPedido = pedido;
     } catch (err) { this.toast(err.message, 'error'); }
+  }
+
+  selectPagoMetodo(metodo, el) {
+    this._pagoMetodo = metodo;
+    document.querySelectorAll('.pago-metodo-card').forEach(c => { c.style.borderColor = 'var(--border-light)'; c.style.background = 'var(--bg-card)'; });
+    el.style.borderColor = 'var(--primary)';
+    el.style.background = 'var(--primary-50)';
+
+    const extras = document.getElementById('pago-extras');
+    const refDiv = document.getElementById('pago-referencia');
+    const btn = document.getElementById('pago-confirm-btn');
+    btn.disabled = false;
+
+    if (metodo === 'efectivo') {
+      extras.style.display = 'block';
+      refDiv.style.display = 'none';
+      document.getElementById('pago-monto-recibido').value = '';
+      document.getElementById('pago-monto-recibido').focus();
+      document.getElementById('pago-cambio').textContent = '';
+    } else {
+      extras.style.display = 'none';
+      refDiv.style.display = 'block';
+    }
+  }
+
+  calcCambio() {
+    const total = this._pagoPedido?.total || 0;
+    const recibido = parseFloat(document.getElementById('pago-monto-recibido').value) || 0;
+    const cambio = recibido - total;
+    const el = document.getElementById('pago-cambio');
+    if (recibido > 0) {
+      el.textContent = cambio >= 0 ? `Cambio: ${this.formatMoney(cambio)}` : `Falta: ${this.formatMoney(Math.abs(cambio))}`;
+      el.style.color = cambio >= 0 ? 'var(--success)' : 'var(--danger)';
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  async confirmPago() {
+    if (!this._pagoMetodo || !this.currentPedidoId) return;
+    const btn = document.getElementById('pago-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+    try {
+      await api.cerrarPedido(this.currentPedidoId, this._pagoMetodo);
+      const pedidoCompleto = await api.getPedido(this.currentPedidoId);
+      this.toast('Pago registrado exitosamente');
+      const mesaNum = this._pagoMesaNum;
+      const metodo = this._pagoMetodo;
+      this.currentPedidoId = null; this.currentMesaId = null; this.currentPedidoMesaNum = null; this.currentMesaCap = null;
+      document.querySelector('.modal-overlay')?.remove();
+      this.showReceiptModal({ ...pedidoCompleto, mesa_numero: mesaNum, metodo_pago: metodo });
+    } catch (err) {
+      this.toast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Pago';
+    }
   }
 
   async cancelarPedidoActual() {
@@ -832,6 +940,8 @@ class App {
     const subtotal = r.pedido.subtotal || 0;
     const igv = r.pedido.impuestos || 0;
     const total = r.pedido.total || 0;
+    const metodoLabels = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', yape: 'Yape', plin: 'Plin', transferencia: 'Transferencia' };
+    const metodoPago = metodoLabels[r.metodo_pago || r.pedido?.metodo_pago] || 'Efectivo';
 
     let itemsRows = items.map(d => {
       const desc = d.producto_nombre;
@@ -866,6 +976,7 @@ class App {
           <div>Fecha: ${r.fechaStr}  Hora: ${r.horaStr}</div>
           <div>Mesa Nro: ${r.mesaNum}</div>
           <div>Vendedor: ${r.usuario}</div>
+          <div>Pago: ${metodoPago}</div>
         </div>
 
         <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:6px">
@@ -923,7 +1034,10 @@ class App {
     overlay.className = 'modal-overlay';
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-    const boletaHtml = this.buildBoletaHtml({ empresa, fechaStr, horaStr, mesaNum, pedido, detalles, usuario: this.user.nombre });
+    const boletaHtml = this.buildBoletaHtml({ empresa, fechaStr, horaStr, mesaNum, pedido, detalles, usuario: this.user.nombre, metodo_pago: pedido.metodo_pago });
+
+    const metodoLabels = { efectivo: '💵 Efectivo', tarjeta: '💳 Tarjeta', yape: '📱 Yape', plin: '📲 Plin', transferencia: '🏦 Transferencia' };
+    const metodoLabel = metodoLabels[pedido.metodo_pago] || pedido.metodo_pago || 'Efectivo';
 
     overlay.innerHTML = `
       <div class="modal" style="max-width:480px">
@@ -936,7 +1050,8 @@ class App {
             </div>
             <div style="font-size:20px;font-weight:800;color:white;margin-top:12px;position:relative;z-index:1">Cobro Exitoso</div>
             <div style="font-size:32px;font-weight:800;color:white;margin-top:4px;font-family:'SF Mono',monospace;position:relative;z-index:1">${this.formatMoney(pedido.total)}</div>
-            <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:4px;position:relative;z-index:1">Mesa ${mesaNum} &middot; ${fechaStr} &middot; ${horaStr}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:6px;position:relative;z-index:1;background:rgba(255,255,255,0.15);display:inline-block;padding:4px 12px;border-radius:20px">${metodoLabel}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px;position:relative;z-index:1">Mesa ${mesaNum} &middot; ${fechaStr} &middot; ${horaStr}</div>
           </div>
 
           <div style="padding:20px 24px">
@@ -976,6 +1091,7 @@ class App {
       detalles,
       total: this.formatMoney(pedido.total),
       usuario: this.user.nombre,
+      metodo_pago: pedido.metodo_pago,
     };
   }
 
@@ -1199,13 +1315,107 @@ class App {
   }
 
   async cobrarPedidoDirecto(pedidoId) {
-    if (!confirm('Cobrar este pedido?')) return;
     try {
-      await api.cerrarPedido(pedidoId);
-      const pedidoCompleto = await api.getPedido(pedidoId);
-      this.toast('Pedido cobrado');
-      this.showReceiptModal(pedidoCompleto);
+      const pedido = await api.getPedido(pedidoId);
+      const total = pedido.total || 0;
+      const mesaNum = pedido.mesa_numero;
+
+      const metodos = [
+        { id: 'efectivo', icon: '💵', label: 'Efectivo', color: '#10b981' },
+        { id: 'tarjeta', icon: '💳', label: 'Tarjeta', color: '#6366f1' },
+        { id: 'yape', icon: '📱', label: 'Yape', color: '#7c3aed' },
+        { id: 'plin', icon: '📲', label: 'Plin', color: '#0ea5e9' },
+        { id: 'transferencia', icon: '🏦', label: 'Transferencia', color: '#f59e0b' },
+      ];
+
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:400px">
+          <div class="modal-header">
+            <h2>Cobrar Pedido</h2>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          </div>
+          <div class="modal-body" style="text-align:center;padding-top:8px">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Mesa ${mesaNum || '-'}</div>
+            <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:20px">${this.formatMoney(total)}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;text-align:left">Metodo de pago</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="pago-metodos">
+              ${metodos.map(m => `
+                <div class="pago-metodo-card" onclick="app.selectPagoMetodoDirecto('${m.id}', this, '${pedidoId}')" data-metodo="${m.id}" style="border:2px solid var(--border-light);border-radius:14px;padding:16px 10px;cursor:pointer;transition:all 0.25s;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--bg-card)">
+                  <span style="font-size:28px">${m.icon}</span>
+                  <span style="font-size:13px;font-weight:600;color:var(--text)">${m.label}</span>
+                </div>`).join('')}
+            </div>
+            <div id="pago-extras" style="margin-top:14px;display:none">
+              <div class="form-group" style="margin-bottom:10px;text-align:left">
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Monto recibido</label>
+                <input type="number" id="pago-monto-recibido" placeholder="0.00" step="0.01" oninput="app.calcCambio()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;text-align:center">
+              </div>
+              <div id="pago-cambio" style="font-size:14px;font-weight:600;color:var(--text-muted);padding:8px 0"></div>
+            </div>
+            <div id="pago-referencia" style="margin-top:14px;display:none">
+              <div class="form-group" style="text-align:left">
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary)">Codigo / Referencia</label>
+                <input type="text" id="pago-ref-code" placeholder="Ej: 123456" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="justify-content:stretch;padding:0 20px 20px">
+            <div style="display:flex;gap:8px;width:100%">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()" style="flex:0 0 auto;border-radius:12px">Cancelar</button>
+              <button class="btn btn-success btn-ripple" id="pago-confirm-btn" onclick="app.confirmPagoDirecto('${pedidoId}')" style="flex:1;border-radius:12px;min-height:48px;font-size:15px" disabled>Confirmar Pago</button>
+            </div>
+          </div>
+        </div>`;
+
+      document.body.appendChild(overlay);
+      this._pagoMetodo = null;
+      this._pagoPedido = pedido;
     } catch (err) { this.toast(err.message, 'error'); }
+  }
+
+  selectPagoMetodoDirecto(metodo, el, pedidoId) {
+    this._pagoMetodo = metodo;
+    this._pagoPedidoId = pedidoId;
+    document.querySelectorAll('.pago-metodo-card').forEach(c => { c.style.borderColor = 'var(--border-light)'; c.style.background = 'var(--bg-card)'; });
+    el.style.borderColor = 'var(--primary)';
+    el.style.background = 'var(--primary-50)';
+
+    const extras = document.getElementById('pago-extras');
+    const refDiv = document.getElementById('pago-referencia');
+    const btn = document.getElementById('pago-confirm-btn');
+    btn.disabled = false;
+
+    if (metodo === 'efectivo') {
+      extras.style.display = 'block';
+      refDiv.style.display = 'none';
+      document.getElementById('pago-monto-recibido').value = '';
+      document.getElementById('pago-monto-recibido').focus();
+      document.getElementById('pago-cambio').textContent = '';
+    } else {
+      extras.style.display = 'none';
+      refDiv.style.display = 'block';
+    }
+  }
+
+  async confirmPagoDirecto(pedidoId) {
+    if (!this._pagoMetodo) return;
+    const btn = document.getElementById('pago-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+    try {
+      await api.cerrarPedido(pedidoId, this._pagoMetodo);
+      const pedidoCompleto = await api.getPedido(pedidoId);
+      this.toast('Pago registrado exitosamente');
+      document.querySelector('.modal-overlay')?.remove();
+      this.showReceiptModal({ ...pedidoCompleto, metodo_pago: this._pagoMetodo });
+    } catch (err) {
+      this.toast(err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Pago';
+    }
   }
 
   /* ==================== MENU ==================== */
@@ -1387,10 +1597,11 @@ class App {
     const hoy = new Date().toISOString().split('T')[0];
     const mes = hoy.substring(0, 7);
     try {
-      const [ventas, top, dashboard] = await Promise.all([
+      const [ventas, top, dashboard, metodosPago] = await Promise.all([
         api.getReporteVentas(`fecha_inicio=${mes}-01&fecha_fin=${hoy}`),
         api.getTopProductos(`fecha_inicio=${mes}-01&fecha_fin=${hoy}&limite=10`),
-        api.getDashboard()
+        api.getDashboard(),
+        api.getMetodosPago(`fecha_inicio=${mes}-01&fecha_fin=${hoy}`)
       ]);
       const maxIngreso = top.length > 0 ? Math.max(...top.map(p => p.total_ingreso)) : 1;
       main.innerHTML = `
@@ -1452,6 +1663,24 @@ class App {
               </div>
             `).join('')}
           </div>
+        </div>
+
+        <div class="card fade-up fade-up-6" style="margin-top:16px">
+          <div class="card-header"><h3>Metodos de Pago</h3><span class="badge badge-success">${metodosPago.length} metodos</span></div>
+          ${metodosPago.length === 0 ? '<p style="text-align:center;color:var(--text-muted);padding:24px">Sin datos</p>' :
+          `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:4px 0">
+            ${metodosPago.map(m => {
+              const icons = { efectivo: '💵', tarjeta: '💳', yape: '📱', plin: '📲', transferencia: '🏦' };
+              const colors = { efectivo: 'var(--success)', tarjeta: '#6366f1', yape: '#7c3aed', plin: '#0ea5e9', transferencia: 'var(--warning)' };
+              return `
+              <div style="text-align:center;padding:16px 10px;border-radius:14px;border:1.5px solid var(--border-light);background:var(--bg-card)">
+                <div style="font-size:28px;margin-bottom:6px">${icons[m.metodo_pago] || '💵'}</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase">${m.metodo_pago || 'efectivo'}</div>
+                <div style="font-size:18px;font-weight:800;color:${colors[m.metodo_pago] || 'var(--success)'};margin-top:4px">${this.formatMoney(m.total_monto)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${m.total_pedidos} pedido(s)</div>
+              </div>`;
+            }).join('')}
+          </div>`}
         </div>`;
     } catch (err) { main.innerHTML = `<div class="empty-state"><h4>Error</h4><p>${err.message}</p></div>`; }
   }
@@ -1750,18 +1979,22 @@ class App {
         </div>
         <div class="table-container fade-up fade-up-1" style="border-radius:var(--radius-lg);overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>#</th><th>Mesa</th><th>Moso</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
+            <thead><tr><th>#</th><th>Mesa</th><th>Moso</th><th>Pago</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
             <tbody>
-              ${pedidos.length === 0 ? '<tr><td colspan="6" class="empty-row" style="padding:48px">Sin pedidos encontrados</td></tr>' :
-              pedidos.map((p, i) => `
+              ${pedidos.length === 0 ? '<tr><td colspan="7" class="empty-row" style="padding:48px">Sin pedidos encontrados</td></tr>' :
+              pedidos.map((p, i) => {
+                const mpLabels = { efectivo: '💵', tarjeta: '💳', yape: '📱', plin: '📲', transferencia: '🏦' };
+                return `
                 <tr class="fade-up" style="animation-delay:${i * 0.03}s">
                   <td style="font-family:monospace;font-weight:700;color:var(--primary)">${p.numero || p.id.substring(0,6).toUpperCase()}</td>
                   <td>${p.mesa_numero ? `<span style="font-weight:600">Mesa ${p.mesa_numero}</span>` : '-'}</td>
                   <td>${p.usuario_nombre || '-'}</td>
+                  <td title="${p.metodo_pago || 'efectivo'}">${mpLabels[p.metodo_pago] || '💵'}</td>
                   <td class="mono" style="font-size:15px;font-weight:700;color:var(--success)">${this.formatMoney(p.total)}</td>
-                  <td><span class="badge badge-${p.estado === 'pagado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">${p.estado}</span></td>
+                  <td><span class="badge badge-${p.estado === 'pagado' || p.estado === 'cerrado' ? 'success' : p.estado === 'cancelado' ? 'danger' : 'warning'}">${p.estado}</span></td>
                   <td style="color:var(--text-muted)">${new Date(p.created_at).toLocaleDateString('es-PE')}</td>
-                </tr>`).join('')}
+                </tr>`;
+              }).join('')}
             </tbody>
           </table>
         </div>`;

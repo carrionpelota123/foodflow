@@ -169,4 +169,28 @@ router.get('/dashboard', (req, res) => {
   }
 });
 
+router.get('/metodos-pago', (req, res) => {
+  try {
+    const empresaId = req.user.rol === 'superadmin' ? (req.query.empresa_id || req.user.empresa_id) : req.user.empresa_id;
+    const { fecha_inicio, fecha_fin } = req.query;
+
+    let query = `
+      SELECT metodo_pago, COUNT(*) as total_pedidos, COALESCE(SUM(total), 0) as total_monto
+      FROM pedidos
+      WHERE empresa_id = ? AND estado = 'cerrado'
+    `;
+    const params = [empresaId];
+
+    if (fecha_inicio) { query += ' AND DATE(cerrado_at) >= ?'; params.push(fecha_inicio); }
+    if (fecha_fin) { query += ' AND DATE(cerrado_at) <= ?'; params.push(fecha_fin); }
+
+    query += ' GROUP BY metodo_pago ORDER BY total_monto DESC';
+    const reporte = db.prepare(query).all(...params);
+    res.json(reporte);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener metodos de pago' });
+  }
+});
+
 module.exports = router;
