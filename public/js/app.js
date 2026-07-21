@@ -184,83 +184,131 @@ class App {
 
   /* ==================== LOGIN ==================== */
   showLogin() {
+    const floatingIcons = ['🍕','🍔','🌮','🍣','🥗','🍝','🍜','🥘','🍰','☕','🥤','🍺','🧁','🍩','🥞','🥑','🍗','🥩','🧀','🥚'];
+    const particles = Array.from({length: 40}, (_, i) => {
+      const size = 2 + Math.random() * 4;
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const dur = 3 + Math.random() * 7;
+      const delay = Math.random() * 5;
+      const opacity = 0.15 + Math.random() * 0.35;
+      return `<div class="login-particle" style="left:${x}%;top:${y}%;width:${size}px;height:${size}px;animation-duration:${dur}s;animation-delay:${delay}s;opacity:${opacity}"></div>`;
+    }).join('');
+    const floatingFood = floatingIcons.map((icon, i) => {
+      const x = 5 + Math.random() * 90;
+      const y = 5 + Math.random() * 90;
+      const dur = 4 + Math.random() * 6;
+      const delay = Math.random() * 3;
+      const size = 20 + Math.random() * 20;
+      const op = 0.08 + Math.random() * 0.12;
+      return `<div class="login-floating-icon" style="left:${x}%;top:${y}%;font-size:${size}px;animation-duration:${dur}s;animation-delay:${delay}s;opacity:${op}">${icon}</div>`;
+    }).join('');
+
     document.getElementById('app').innerHTML = `
       <div class="login-container">
+        <div class="login-bg-grid"></div>
+        ${particles}
+        ${floatingFood}
         <div class="login-orb login-orb-1"></div>
         <div class="login-orb login-orb-2"></div>
         <div class="login-orb login-orb-3"></div>
+        <div class="login-orb login-orb-4"></div>
 
         <div class="login-clock" id="login-clock"></div>
 
-        <div class="login-box">
-          <div class="login-logo">
-            <div class="logo-circle">
-              <span>🍽</span>
+        <div class="login-main-layout">
+          <div class="login-left-panel">
+            <div class="login-hero">
+              <div class="login-hero-badge">Sistema SaaS v1.0</div>
+              <h1 class="login-hero-title">ECSYSTEM</h1>
+              <p class="login-hero-subtitle">Sistema de Gestion Inteligente para Restaurantes</p>
+              <div class="login-hero-features">
+                <div class="login-feature-item"><span class="feature-icon">📊</span><span>Dashboard en tiempo real</span></div>
+                <div class="login-feature-item"><span class="feature-icon">🍽</span><span>Gestion de mesas y pedidos</span></div>
+                <div class="login-feature-item"><span class="feature-icon">💰</span><span>Control de caja y reportes</span></div>
+                <div class="login-feature-item"><span class="feature-icon">📱</span><span>Compatible con movil</span></div>
+              </div>
             </div>
-            <h1>ECSYSTEM</h1>
-            <p>Sistema de Gestion de Restaurantes</p>
           </div>
 
-          <div class="login-tabs" id="login-tabs">
-            <button class="tab-btn active" onclick="app.showLoginForm()">Iniciar Sesion</button>
-            <button class="tab-btn" onclick="app.showRegisterForm()">Crear Cuenta</button>
-          </div>
+          <div class="login-right-panel">
+            <div class="login-box">
+              <div class="login-logo">
+                <div class="logo-circle">
+                  <span>🍽</span>
+                </div>
+                <h1>Bienvenido</h1>
+                <p>Ingresa a tu cuenta o crea una nueva</p>
+              </div>
 
-          <div id="login-form" class="login-form">
-            <div class="form-group floating-group">
-              <input type="email" id="login-email" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
-              <label>Correo electronico</label>
-              <span class="input-icon">✉</span>
-            </div>
-            <div class="form-group floating-group">
-              <input type="password" id="login-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
-              <label>Contrasena</label>
-              <span class="input-icon">🔒</span>
-            </div>
-            <button class="btn btn-primary btn-block btn-lg btn-ripple" onclick="app.doLogin()" id="login-btn" style="margin-top:12px">
-              Iniciar Sesion
-            </button>
-            <p class="login-footer-text">Eres nuevo? Haz clic en <strong>"Crear Cuenta"</strong></p>
-          </div>
+              <div class="login-tabs" id="login-tabs">
+                <button class="tab-btn active" onclick="app.showLoginForm()">Iniciar Sesion</button>
+                <button class="tab-btn" onclick="app.showRegisterForm()">Crear Cuenta</button>
+              </div>
 
-          <div id="register-form" class="login-form hidden">
-            <div class="form-group floating-group">
-              <input type="text" id="reg-empresa" placeholder=" ">
-              <label>Nombre del restaurante</label>
-              <span class="input-icon">🏪</span>
-            </div>
-            <div class="form-group floating-group">
-              <input type="email" id="reg-email-empresa" placeholder=" ">
-              <label>Email del restaurante</label>
-              <span class="input-icon">✉</span>
-            </div>
-            <div class="form-group floating-group">
-              <input type="text" id="reg-telefono" placeholder=" ">
-              <label>Telefono</label>
-              <span class="input-icon">📱</span>
-            </div>
-            <div class="form-divider"><span>Datos del administrador</span></div>
-            <div class="form-group floating-group">
-              <input type="text" id="reg-nombre" placeholder=" ">
-              <label>Tu nombre</label>
-              <span class="input-icon">👤</span>
-            </div>
-            <div class="form-group floating-group">
-              <input type="email" id="reg-email" placeholder=" ">
-              <label>Tu correo</label>
-              <span class="input-icon">✉</span>
-            </div>
-            <div class="form-group floating-group">
-              <input type="password" id="reg-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doRegister()">
-              <label>Contrasena</label>
-              <span class="input-icon">🔒</span>
-            </div>
-            <button class="btn btn-primary btn-block btn-lg btn-ripple" onclick="app.doRegister()" id="reg-btn" style="margin-top:12px">
-              Crear Cuenta
-            </button>
-          </div>
+              <div id="login-form" class="login-form">
+                <div class="form-group floating-group">
+                  <input type="email" id="login-email" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
+                  <label>Correo electronico</label>
+                  <span class="input-icon">✉</span>
+                </div>
+                <div class="form-group floating-group">
+                  <input type="password" id="login-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doLogin()">
+                  <label>Contrasena</label>
+                  <span class="input-icon">🔒</span>
+                </div>
+                <button class="btn btn-primary btn-block btn-lg btn-shimmer" onclick="app.doLogin()" id="login-btn" style="margin-top:12px">
+                  Iniciar Sesion
+                </button>
+                <p class="login-footer-text">Eres nuevo? Haz clic en <strong>"Crear Cuenta"</strong></p>
+              </div>
 
-          <div id="login-error" class="login-error hidden"></div>
+              <div id="register-form" class="login-form hidden">
+                <div class="form-group floating-group">
+                  <input type="text" id="reg-empresa" placeholder=" ">
+                  <label>Nombre del restaurante</label>
+                  <span class="input-icon">🏪</span>
+                </div>
+                <div class="form-group floating-group">
+                  <input type="email" id="reg-email-empresa" placeholder=" ">
+                  <label>Email del restaurante</label>
+                  <span class="input-icon">✉</span>
+                </div>
+                <div class="form-group floating-group">
+                  <input type="text" id="reg-telefono" placeholder=" ">
+                  <label>Telefono</label>
+                  <span class="input-icon">📱</span>
+                </div>
+                <div class="form-divider"><span>Datos del administrador</span></div>
+                <div class="form-group floating-group">
+                  <input type="text" id="reg-nombre" placeholder=" ">
+                  <label>Tu nombre</label>
+                  <span class="input-icon">👤</span>
+                </div>
+                <div class="form-group floating-group">
+                  <input type="email" id="reg-email" placeholder=" ">
+                  <label>Tu correo</label>
+                  <span class="input-icon">✉</span>
+                </div>
+                <div class="form-group floating-group">
+                  <input type="password" id="reg-password" placeholder=" " onkeydown="if(event.key==='Enter')app.doRegister()">
+                  <label>Contrasena</label>
+                  <span class="input-icon">🔒</span>
+                </div>
+                <button class="btn btn-primary btn-block btn-lg btn-shimmer" onclick="app.doRegister()" id="reg-btn" style="margin-top:12px">
+                  Crear Cuenta
+                </button>
+              </div>
+
+              <div id="login-error" class="login-error hidden"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-footer-bar">
+          <button class="login-contact-btn" onclick="app.showContactModal()">
+            <span>💬</span> Contactanos
+          </button>
         </div>
 
         <div class="login-watermark">
@@ -269,6 +317,52 @@ class App {
         </div>
       </div>`;
     this.startLoginClock();
+  }
+
+  showContactModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:440px">
+        <div class="modal-header" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:28px 24px 20px;border-radius:24px 24px 0 0">
+          <div>
+            <h2 style="color:white;margin-bottom:4px">Contactanos</h2>
+            <p style="color:rgba(255,255,255,0.7);font-size:13px">Estamos aqui para ayudarte</p>
+          </div>
+          <button class="modal-close" style="background:rgba(255,255,255,0.2);color:white;border:none" onclick="this.closest('.modal-overlay').remove()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:28px 24px">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#f43f5e);display:inline-flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:14px;box-shadow:0 8px 30px rgba(99,102,241,0.3)">👨‍💻</div>
+            <h3 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px">Ing. Erick Carrion Salazar</h3>
+            <p style="font-size:13px;color:var(--text-muted)">Desarrollador del Sistema</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:14px;transition:all 0.2s;cursor:pointer" onmouseover="this.style.background='var(--primary-50)'" onmouseout="this.style.background='var(--bg)'">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📱</div>
+              <div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:2px">Telefono</p><p style="font-size:16px;font-weight:700;color:var(--text)">956 071 379</p></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:14px;transition:all 0.2s;cursor:pointer" onmouseover="this.style.background='var(--primary-50)'" onmouseout="this.style.background='var(--bg)'">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--danger-bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✉️</div>
+              <div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:2px">Correo</p><p style="font-size:16px;font-weight:700;color:var(--text);word-break:break-all">carrionerick53@gmail.com</p></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg);border-radius:14px;transition:all 0.2s;cursor:pointer" onmouseover="this.style.background='var(--primary-50)'" onmouseout="this.style.background='var(--bg)'">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🌐</div>
+              <div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:2px">Sistema</p><p style="font-size:16px;font-weight:700;color:var(--text)">ECSYSTEM v1.0</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding:0 24px 24px">
+          <a href="https://wa.me/51956071379" target="_blank" class="btn btn-success btn-block btn-shimmer" style="border-radius:14px">
+            <span>💬</span> WhatsApp
+          </a>
+          <a href="mailto:carrionerick53@gmail.com" class="btn btn-primary btn-block btn-shimmer" style="border-radius:14px">
+            <span>✉</span> Enviar Correo
+          </a>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
   startLoginClock() {
